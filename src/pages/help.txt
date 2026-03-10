@@ -1,0 +1,5 @@
+
+To run the application, you should go to terminal of vscode and navigate to server
+using cd server. then type command: 'npm run dev' to start the server which in this case is 3001 
+which communicates to the api and thus openweather. Then once running, open a new terminal and 
+type command npm run dev with location in my-app root. this will launch server.

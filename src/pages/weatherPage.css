@@ -1,0 +1,389 @@
+/* WeatherPage.css */
+
+.weather-page {
+  min-height: 100vh;
+  background-color: #b8ddb8;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.top-nav {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+
+.nav-btn {
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  transition: background 0.2s;
+}
+
+.nav-btn:hover {
+  background: #f0f0f0;
+}
+
+.weather-layout {
+  display: flex;
+  gap: 24px;
+  padding: 0 40px 40px;
+  max-width: 1300px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+/* ── Left Finder Panel ── */
+.finder-panel {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  flex: 1;
+  min-width: 280px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.finder-panel h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 20px;
+  color: #1a1a1a;
+}
+
+.input-label {
+  display: block;
+  font-size: 14px;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.input-wrapper {
+  margin-bottom: 12px;
+}
+
+.input-row {
+  display: flex;
+  gap: 8px;
+}
+
+/* Autocomplete container — position relative for dropdown */
+.autocomplete-container {
+  position: relative;
+  flex: 1;
+}
+
+.location-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  background: #f0f0f0;
+  font-size: 15px;
+  box-sizing: border-box;
+  outline: none;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.location-input:focus {
+  box-shadow: 0 0 0 2px #4caf50;
+  background: white;
+  border-color: #4caf50;
+}
+
+.location-input.input-error {
+  border-color: #e53935;
+  background: #fff5f5;
+}
+
+/* Suggestions dropdown */
+.suggestions-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  z-index: 100;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.suggestion-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.suggestion-item:hover {
+  background: #f0f7f0;
+}
+
+.suggestion-name {
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+.suggestion-coords {
+  font-size: 11px;
+  color: #aaa;
+  font-family: monospace;
+}
+
+/* Error & coords feedback */
+.location-error {
+  font-size: 13px;
+  color: #e53935;
+  margin: 6px 0 0;
+}
+
+.location-coords {
+  font-size: 12px;
+  color: #777;
+  margin: 6px 0 0;
+  font-family: monospace;
+}
+
+/* Geo button */
+.geo-btn {
+  width: 100%;
+  padding: 11px 14px;
+  background: white;
+  color: #2db540;
+  border: 1.5px solid #2db540;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 10px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.geo-btn:hover {
+  background: #f0faf1;
+}
+
+.geo-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Get Weather button */
+.get-weather-btn {
+  width: 100%;
+  padding: 14px;
+  background: #2db540;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.get-weather-btn:hover {
+  background: #28a03a;
+}
+
+/* ── Right Results Panel ── */
+.results-panel {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  flex: 1.2;
+  min-width: 320px;
+  max-height: 82vh;
+  overflow-y: auto;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.results-panel h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 20px;
+  color: #1a1a1a;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #aaa;
+}
+
+.empty-cloud {
+  font-size: 60px;
+  opacity: 0.4;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.empty-state p {
+  font-size: 15px;
+  margin: 0;
+}
+
+.results-location {
+  text-align: center;
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Weather Card ── */
+.weather-card {
+  background: #f7f8fa;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+/* Header row: band icon + label + time */
+.weather-card-header {
+  margin-bottom: 12px;
+}
+
+.run-band-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.run-band-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.run-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 2px;
+}
+
+.run-time-label {
+  font-size: 12px;
+  color: #888;
+  margin: 0;
+  font-style: italic;
+}
+
+/* Main weather row */
+.weather-card-main {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.weather-icon {
+  font-size: 42px;
+  line-height: 1;
+}
+
+.weather-card-info .run-temp {
+  font-size: 26px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0 0 2px;
+}
+
+.weather-card-info .run-condition {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+/* Stats row */
+.weather-card-stats {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: #555;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #e8e8e8;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+/* Expanded extra row */
+.weather-card-extra {
+  display: flex;
+  gap: 24px;
+  padding: 12px 0;
+  border-top: 1px solid #e8e8e8;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.extra-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.extra-label {
+  font-size: 12px;
+  color: #888;
+}
+
+.extra-item strong {
+  font-size: 14px;
+  color: #1a1a1a;
+}
+
+.more-btn {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+  display: block;
+  margin: 0 auto;
+  transition: opacity 0.2s;
+}
+
+.more-btn:hover {
+  opacity: 0.7;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .weather-layout {
+    flex-direction: column;
+    padding: 0 16px 32px;
+  }
+
+  .results-panel {
+    max-height: none;
+  }
+}
