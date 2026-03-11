@@ -231,7 +231,7 @@ function LocationInput({ label, value, onChange, locations, placeholder, error, 
   );
 }
 
-// ── VerticalSlider ────────────────────────────────────────────────────────────
+// ── VerticalSlider ─ ───────────────────────────────────────────────────────────
 function VerticalSlider({ points, activeIndex, onChange }) {
   const trackRef = useRef(null);
   const isDragging = useRef(false);
