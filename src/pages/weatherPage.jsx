@@ -1,4 +1,13 @@
 import { useState, useRef, useEffect } from "react";
+import {
+  getForecastByCoords,
+  getAirQualityByCoords,
+  weatherCodeToLabel,
+  airQualityLabel,
+  groundLabel,
+  icyLabel,
+  pollenLabel
+} from "../services/openMeteo";
 import "./WeatherPage.css";
 
 // ── Run time bands ────────────────────────────────────────────────────────────
@@ -8,14 +17,6 @@ const RUN_BANDS = [
   { id: 3, label: "Evening Run",   timeLabel: "6:00 PM – 12:00 AM", icon: "🌆", iconType: "evening"   },
   { id: 4, label: "Night Run",     timeLabel: "12:00 AM – 6:00 AM", icon: "🌙", iconType: "night"     },
 ];
-
-// Mock weather per band (replace with real API data later)
-const MOCK_WEATHER = {
-  1: { temp: "8°C",  condition: "Cloudy", icon: "☁️",  iconType: "cloudy", humidity: "55%", wind: "5 km/h",  ground: "damp", pollen: "Low",    airQuality: "Good",     icyness: "None" },
-  2: { temp: "15°C", condition: "Sunny",  icon: "☀️",  iconType: "sunny",  humidity: "66%", wind: "24 km/h", ground: "damp", pollen: "Medium", airQuality: "Moderate", icyness: "None" },
-  3: { temp: "8°C",  condition: "Rainy",  icon: "🌧️", iconType: "rainy",  humidity: "60%", wind: "14 km/h", ground: "dry",  pollen: "Low",    airQuality: "Good",     icyness: "Icy"  },
-  4: { temp: "4°C",  condition: "Clear",  icon: "🌙",  iconType: "night",  humidity: "70%", wind: "8 km/h",  ground: "wet",  pollen: "None",   airQuality: "Good",     icyness: "Icy"  },
-};
 
 // ── Load CSV locations ────────────────────────────────────────────────────────
 // We inline-parse the CSV that lives next to this file.
@@ -109,8 +110,94 @@ function WeatherCard({ band, weather }) {
   );
 }
 
+function average(nums) {
+  const valid = nums.filter((n) => typeof n === "number");
+  if (!valid.length) return null;
+  return valid.reduce((a, b) => a + b, 0) / valid.length;
+}
+
+function mostCommon(arr) {
+  const counts = {};
+  for (const value of arr) {
+    counts[value] = (counts[value] || 0) + 1;
+  }
+  return Number(
+    Object.keys(counts).sort((a, b) => counts[b] - counts[a])[0]
+  );
+}
+
+function inBand(hour, bandId) {
+  if (bandId === 1) return hour >= 6 && hour < 12;
+  if (bandId === 2) return hour >= 12 && hour < 18;
+  if (bandId === 3) return hour >= 18 && hour < 24;
+  return hour >= 0 && hour < 6;
+}
+
+function buildBandWeather(forecast, airData) {
+  const hourly = forecast.hourly;
+  const aqi = airData?.current?.european_aqi ?? null;
+
+  const bandWeather = {};
+
+  for (const band of RUN_BANDS) {
+    const indices = hourly.time
+      .map((time, i) => ({ time, i }))
+      .filter(({ time }) => {
+        const d = new Date(time);
+        return inBand(d.getHours(), band.id);
+      })
+      .map(({ i }) => i);
+
+    if (!indices.length) {
+      bandWeather[band.id] = {
+        temp: "—",
+        condition: "No data",
+        icon: "❔",
+        iconType: "cloudy",
+        humidity: "—",
+        wind: "—",
+        ground: "Unknown",
+        pollen: pollenLabel(),
+        airQuality: airQualityLabel(aqi),
+        icyness: "Unknown"
+      };
+      continue;
+    }
+
+    const temps = indices.map((i) => hourly.temperature_2m[i]);
+    const humidity = indices.map((i) => hourly.relative_humidity_2m[i]);
+    const wind = indices.map((i) => hourly.wind_speed_10m[i]);
+    const codes = indices.map((i) => hourly.weather_code[i]);
+
+    const avgTemp = average(temps);
+    const avgHumidity = average(humidity);
+    const avgWind = average(wind);
+    const commonCode = mostCommon(codes);
+    const weatherMeta = weatherCodeToLabel(commonCode);
+
+    bandWeather[band.id] = {
+      temp: avgTemp == null ? "—" : `${Math.round(avgTemp)}°C`,
+      condition: weatherMeta.label,
+      icon: weatherMeta.icon,
+      iconType: weatherMeta.iconType,
+      humidity: avgHumidity == null ? "—" : `${Math.round(avgHumidity)}%`,
+      wind: avgWind == null ? "—" : `${Math.round(avgWind)} km/h`,
+      ground: groundLabel(commonCode),
+      pollen: pollenLabel(),
+      airQuality: airQualityLabel(aqi),
+      icyness: icyLabel(avgTemp)
+    };
+  }
+
+  return bandWeather;
+}
+
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function WeatherPage({ onNavigateToRoute }) {
+  const [weatherBands, setWeatherBands] = useState({});
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState("");
   const [inputValue, setInputValue] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null); // { name, lat, lng }
@@ -178,35 +265,54 @@ export default function WeatherPage({ onNavigateToRoute }) {
     setLocationError("");
   };
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     setLocationError("");
+    setWeatherError("");
+
     if (!inputValue.trim()) return;
 
-    if (selectedLocation) {
-      setSearchedLocation(selectedLocation);
-      return;
+    let finalLocation = selectedLocation;
+
+    if (!finalLocation) {
+      const parsed = parseLatLng(inputValue.trim());
+      if (parsed) {
+        finalLocation = { name: inputValue.trim(), lat: parsed.lat, lng: parsed.lng };
+        setSelectedLocation(finalLocation);
+      } else {
+        const exact = locations.find(
+          (l) => l.name.toLowerCase() === inputValue.trim().toLowerCase()
+        );
+
+        if (exact) {
+          finalLocation = exact;
+          setSelectedLocation(exact);
+          setInputValue(exact.name);
+        } else {
+          setLocationError(
+            "Location not found. Enter a city name or valid lat, lng (e.g. 51.5074, -0.1278)."
+          );
+          setSearchedLocation(null);
+          return;
+        }
+      }
     }
 
-    // Try lat, lng format
-    const parsed = parseLatLng(inputValue.trim());
-    if (parsed) {
-      const loc = { name: inputValue.trim(), lat: parsed.lat, lng: parsed.lng };
-      setSelectedLocation(loc);
-      setSearchedLocation(loc);
-      return;
-    }
+    try {
+      setWeatherLoading(true);
 
-    // Try exact city name match
-    const exact = locations.find(
-      (l) => l.name.toLowerCase() === inputValue.trim().toLowerCase()
-    );
-    if (exact) {
-      setSelectedLocation(exact);
-      setSearchedLocation(exact);
-      setInputValue(exact.name);
-    } else {
-      setLocationError("Location not found. Enter a city name or valid lat, lng (e.g. 51.5074, -0.1278).");
+      const [forecast, airData] = await Promise.all([
+        getForecastByCoords(finalLocation.lat, finalLocation.lng),
+        getAirQualityByCoords(finalLocation.lat, finalLocation.lng).catch(() => null)
+      ]);
+
+      const bandData = buildBandWeather(forecast, airData);
+      setWeatherBands(bandData);
+      setSearchedLocation(finalLocation);
+    } catch (err) {
+      setWeatherError(err.message || "Failed to fetch weather data");
       setSearchedLocation(null);
+    } finally {
+      setWeatherLoading(false);
     }
   };
 
@@ -338,13 +444,19 @@ export default function WeatherPage({ onNavigateToRoute }) {
           ) : (
             <div className="results-list">
               <p className="results-location">{searchedLocation.name}</p>
-              {RUN_BANDS.map((band) => (
-                <WeatherCard
-                  key={band.id}
-                  band={band}
-                  weather={MOCK_WEATHER[band.id]}
-                />
-              ))}
+              {weatherLoading ? (
+                <p>Loading weather data…</p>
+              ) : weatherError ? (
+                <p className="location-error">{weatherError}</p>
+              ) : (
+                RUN_BANDS.map((band) => (
+                  <WeatherCard
+                    key={band.id}
+                    band={band}
+                    weather={weatherBands[band.id]}
+                  />
+                ))
+              )}
             </div>
           )}
         </div>
