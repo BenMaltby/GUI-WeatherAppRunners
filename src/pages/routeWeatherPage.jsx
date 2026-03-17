@@ -1,4 +1,13 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import {
+  getForecastByCoords,
+  getAirQualityByCoords,
+  weatherCodeToLabel,
+  airQualityLabel,
+  groundLabel,
+  icyLabel,
+  pollenLabel
+} from "../services/openMeteo";
 import "./RouteWeatherPage.css";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -45,31 +54,6 @@ function parseLatLng(str) {
   const lng = parseFloat(m[2]);
   if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
   return { lat, lng };
-}
-
-// Mock weather generator (deterministic-ish from lat/lng)
-const CONDITIONS = [
-  { condition: "Sunny",  icon: "☀️",  iconType: "sunny"  },
-  { condition: "Cloudy", icon: "☁️",  iconType: "cloudy" },
-  { condition: "Rainy",  icon: "🌧️", iconType: "rainy"  },
-  { condition: "Windy",  icon: "💨",  iconType: "windy"  },
-  { condition: "Clear",  icon: "🌤️", iconType: "clear"  },
-];
-function mockWeather(lat, lng) {
-  const seed = Math.abs(Math.round((lat * 100 + lng * 37) % CONDITIONS.length));
-  const c = CONDITIONS[Math.abs(seed) % CONDITIONS.length];
-  const temp = Math.round(5 + Math.abs((lat * 7 + lng * 3) % 15));
-  const humidity = Math.round(40 + Math.abs((lat * 11 + lng * 7) % 50));
-  const wind = Math.round(5 + Math.abs((lat * 5 + lng * 9) % 30));
-  const grounds = ["Dry", "Damp", "Wet"];
-  const ground = grounds[Math.abs(Math.round(lat + lng)) % 3];
-  const pollens = ["Low", "Medium", "High"];
-  const pollen = pollens[Math.abs(Math.round(lat * 2)) % 3];
-  const aqList = ["Good", "Moderate", "Poor"];
-  const airQuality = aqList[Math.abs(Math.round(lng * 2)) % 3];
-  const icyList = ["None", "None", "None", "Icy"];
-  const icyness = icyList[Math.abs(Math.round(lat + lng * 3)) % 4];
-  return { ...c, temp: `${temp}°C`, humidity: `${humidity}%`, wind: `${wind} km/h`, ground, pollen, airQuality, icyness };
 }
 
 // Build the full list of slider points from key stops.
@@ -311,9 +295,33 @@ function VerticalSlider({ points, activeIndex, onChange }) {
 }
 
 // ── WeatherCard ───────────────────────────────────────────────────────────────
-function WeatherCard({ point, index, total }) {
+function WeatherCard({ point, index, total, weather, loading, error }) {
   const [expanded, setExpanded] = useState(false);
-  const w = mockWeather(point.lat, point.lng);
+
+  if (loading) {
+    return (
+      <div className="route-weather-card">
+        <p>Loading weather for {point.name}…</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="route-weather-card">
+        <p>Could not load weather.</p>
+        <p>{error}</p>
+      </div>
+    );
+  }
+
+  if (!weather) {
+    return (
+      <div className="route-weather-card">
+        <p>No weather data available.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="route-weather-card">
@@ -322,28 +330,30 @@ function WeatherCard({ point, index, total }) {
           {point.isKeyStop ? <span className="key-stop-badge">📍 Key Stop</span> : "Waypoint"}{" "}
           · {point.name}
         </p>
-        <p className="route-position-sub">Point {index + 1}/{total} · ~{point.distFromStart.toFixed(1)} km from start</p>
+        <p className="route-position-sub">
+          Point {index + 1}/{total} · ~{point.distFromStart.toFixed(1)} km from start
+        </p>
       </div>
 
       <div className="route-card-main">
-        <span className={`route-icon ${w.iconType}`}>{w.icon}</span>
+        <span className={`route-icon ${weather.iconType}`}>{weather.icon}</span>
         <div>
-          <p className="route-temp">{w.temp}</p>
-          <p className="route-condition">{w.condition}</p>
+          <p className="route-temp">{weather.temp}</p>
+          <p className="route-condition">{weather.condition}</p>
         </div>
       </div>
 
       <div className="route-stats">
-        <div className="route-stat"><span className="stat-label">💧 Humidity:</span><strong>{w.humidity}</strong></div>
-        <div className="route-stat"><span className="stat-label">💨 Wind Speed:</span><strong>{w.wind}</strong></div>
-        <div className="route-stat"><span className="stat-label">Ground:</span><strong>{w.ground}</strong></div>
+        <div className="route-stat"><span className="stat-label">💧 Humidity:</span><strong>{weather.humidity}</strong></div>
+        <div className="route-stat"><span className="stat-label">💨 Wind Speed:</span><strong>{weather.wind}</strong></div>
+        <div className="route-stat"><span className="stat-label">Ground:</span><strong>{weather.ground}</strong></div>
       </div>
 
       {expanded && (
         <div className="route-card-extra">
-          <div className="extra-item"><span className="extra-label">Pollen</span><strong>{w.pollen}</strong></div>
-          <div className="extra-item"><span className="extra-label">Air Quality</span><strong>{w.airQuality}</strong></div>
-          <div className="extra-item"><span className="extra-label">Icyness</span><strong>{w.icyness}</strong></div>
+          <div className="extra-item"><span className="extra-label">Pollen</span><strong>{weather.pollen}</strong></div>
+          <div className="extra-item"><span className="extra-label">Air Quality</span><strong>{weather.airQuality}</strong></div>
+          <div className="extra-item"><span className="extra-label">Icyness</span><strong>{weather.icyness}</strong></div>
         </div>
       )}
 
@@ -358,6 +368,9 @@ function WeatherCard({ point, index, total }) {
 const MAX_STOPS = 5; // start + end + 3 middle
 
 export default function RouteWeatherPage({ onNavigateToWeather }) {
+  const [activeWeather, setActiveWeather] = useState(null);
+  const [weatherLoading, setWeatherLoading] = useState(false);
+  const [weatherError, setWeatherError] = useState("");
   const [locations, setLocations] = useState([]);
   // keyStops: array of { id, resolved: {name,lat,lng}|null, error: string }
   const [keyStops, setKeyStops] = useState([
@@ -427,6 +440,45 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
 
   const canAddStop = keyStops.length < MAX_STOPS;
   const activePoint = sliderPoints[activeIndex] ?? null;
+
+  useEffect(() => {
+    async function loadPointWeather() {
+      if (!activePoint) return;
+
+      try {
+        setWeatherLoading(true);
+        setWeatherError("");
+
+        const [forecast, airData] = await Promise.all([
+          getForecastByCoords(activePoint.lat, activePoint.lng),
+          getAirQualityByCoords(activePoint.lat, activePoint.lng).catch(() => null)
+        ]);
+
+        const current = forecast.current;
+        const meta = weatherCodeToLabel(current.weather_code);
+
+        setActiveWeather({
+          temp: current.temperature_2m == null ? "—" : `${Math.round(current.temperature_2m)}°C`,
+          condition: meta.label,
+          icon: meta.icon,
+          iconType: meta.iconType,
+          humidity: current.relative_humidity_2m == null ? "—" : `${Math.round(current.relative_humidity_2m)}%`,
+          wind: current.wind_speed_10m == null ? "—" : `${Math.round(current.wind_speed_10m)} km/h`,
+          ground: groundLabel(current.weather_code),
+          pollen: pollenLabel(),
+          airQuality: airQualityLabel(airData?.current?.european_aqi),
+          icyness: icyLabel(current.temperature_2m)
+        });
+      } catch (err) {
+        setWeatherError(err.message || "Failed to fetch route weather");
+        setActiveWeather(null);
+      } finally {
+        setWeatherLoading(false);
+      }
+    }
+
+    loadPointWeather();
+  }, [activePoint]);
 
   return (
     <div className="route-page">
@@ -533,6 +585,9 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
               point={activePoint}
               index={activeIndex}
               total={sliderPoints.length}
+              weather={activeWeather}
+              loading={weatherLoading}
+              error={weatherError}
             />
           ) : null}
         </div>
