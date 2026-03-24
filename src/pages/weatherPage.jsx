@@ -10,6 +10,8 @@ import {
 } from "../services/openMeteo";
 import "./WeatherPage.css";
 
+
+// Keela's comment
 // ── Run time bands ────────────────────────────────────────────────────────────
 const RUN_BANDS = [
   { id: 1, label: "Morning Run",   timeLabel: "6:00 AM – 12:00 PM", icon: "🌤️", iconType: "morning"   },
