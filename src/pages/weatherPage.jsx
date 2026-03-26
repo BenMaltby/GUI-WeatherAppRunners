@@ -3,6 +3,7 @@ import {
   geocodeCity,
   getForecastByCoords,
   getAirQualityByCoords,
+  getHourlyPollenValue,
   weatherCodeToLabel,
   airQualityLabel,
   groundLabel,
@@ -140,7 +141,7 @@ function buildBandWeather(forecast, airData) {
         humidity: "—",
         wind: "—",
         ground: "Unknown",
-        pollen: pollenLabel(),
+        pollen: pollenLabel(null),
         airQuality: airQualityLabel(aqi),
         icyness: "Unknown"
       };
@@ -151,12 +152,16 @@ function buildBandWeather(forecast, airData) {
     const humidity = indices.map((i) => hourly.relative_humidity_2m[i]);
     const wind = indices.map((i) => hourly.wind_speed_10m[i]);
     const codes = indices.map((i) => hourly.weather_code[i]);
+    const pollenValues = indices
+      .map((i) => getHourlyPollenValue(airData, i))
+      .filter((value) => value != null);
 
     const avgTemp = average(temps);
     const avgHumidity = average(humidity);
     const avgWind = average(wind);
     const commonCode = mostCommon(codes);
     const weatherMeta = weatherCodeToLabel(commonCode);
+    const peakPollen = pollenValues.length ? Math.max(...pollenValues) : null;
 
     bandWeather[band.id] = {
       temp: avgTemp == null ? "—" : `${Math.round(avgTemp)}°C`,
@@ -166,7 +171,7 @@ function buildBandWeather(forecast, airData) {
       humidity: avgHumidity == null ? "—" : `${Math.round(avgHumidity)}%`,
       wind: avgWind == null ? "—" : `${Math.round(avgWind)} km/h`,
       ground: groundLabel(commonCode),
-      pollen: pollenLabel(),
+      pollen: pollenLabel(peakPollen),
       airQuality: airQualityLabel(aqi),
       icyness: icyLabel(avgTemp)
     };

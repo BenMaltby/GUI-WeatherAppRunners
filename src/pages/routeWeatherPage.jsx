@@ -3,6 +3,7 @@ import {
   geocodeCity,
   getForecastByCoords,
   getAirQualityByCoords,
+  getCurrentPollenValue,
   weatherCodeToLabel,
   airQualityLabel,
   groundLabel,
@@ -390,7 +391,7 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
           humidity: current.relative_humidity_2m == null ? "—" : `${Math.round(current.relative_humidity_2m)}%`,
           wind: current.wind_speed_10m == null ? "—" : `${Math.round(current.wind_speed_10m)} km/h`,
           ground: groundLabel(current.weather_code),
-          pollen: pollenLabel(),
+          pollen: pollenLabel(getCurrentPollenValue(airData)),
           airQuality: airQualityLabel(airData?.current?.european_aqi),
           icyness: icyLabel(current.temperature_2m)
         });

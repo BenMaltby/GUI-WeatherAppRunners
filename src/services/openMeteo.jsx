@@ -1,6 +1,14 @@
 const GEO_BASE = "https://geocoding-api.open-meteo.com/v1/search";
 const WEATHER_BASE = "https://api.open-meteo.com/v1/forecast";
 const AIR_BASE = "https://air-quality-api.open-meteo.com/v1/air-quality";
+const POLLEN_FIELDS = [
+  "alder_pollen",
+  "birch_pollen",
+  "grass_pollen",
+  "mugwort_pollen",
+  "olive_pollen",
+  "ragweed_pollen",
+];
 
 function formatGeocodeResult(result) {
   return {
@@ -72,7 +80,9 @@ export async function getAirQualityByCoords(lat, lng) {
   const params = new URLSearchParams({
     latitude: String(lat),
     longitude: String(lng),
-    current: "european_aqi"
+    current: ["european_aqi", ...POLLEN_FIELDS].join(","),
+    hourly: POLLEN_FIELDS.join(","),
+    timezone: "auto",
   });
 
   const res = await fetch(`${AIR_BASE}?${params.toString()}`);
@@ -129,6 +139,45 @@ export function icyLabel(tempC) {
   return tempC <= 1 ? "Icy" : "None";
 }
 
-export function pollenLabel() {
-  return "Not available";
+function toValidPollenValue(value) {
+  return typeof value === "number" && !Number.isNaN(value) ? value : null;
+}
+
+export function getPeakPollenValue(pollenValues) {
+  const validValues = pollenValues
+    .map(toValidPollenValue)
+    .filter((value) => value != null);
+
+  if (!validValues.length) {
+    return null;
+  }
+
+  return Math.max(...validValues);
+}
+
+export function getCurrentPollenValue(airData) {
+  if (!airData?.current) {
+    return null;
+  }
+
+  return getPeakPollenValue(POLLEN_FIELDS.map((field) => airData.current[field]));
+}
+
+export function getHourlyPollenValue(airData, index) {
+  if (!airData?.hourly) {
+    return null;
+  }
+
+  return getPeakPollenValue(
+    POLLEN_FIELDS.map((field) => airData.hourly[field]?.[index])
+  );
+}
+
+export function pollenLabel(pollenValue) {
+  if (pollenValue == null) return "Unavailable";
+  if (pollenValue < 1) return "Very Low";
+  if (pollenValue < 20) return "Low";
+  if (pollenValue < 80) return "Moderate";
+  if (pollenValue < 250) return "High";
+  return "Very High";
 }
