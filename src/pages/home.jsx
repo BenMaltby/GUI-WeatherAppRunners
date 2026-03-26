@@ -6,7 +6,6 @@ export default function Home() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    setStatus("loading");
     fetch("/api/forecast")
       .then((r) => r.json())
       .then((json) => {

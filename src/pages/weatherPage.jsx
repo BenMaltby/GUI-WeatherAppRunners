@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
+  geocodeCity,
   getForecastByCoords,
   getAirQualityByCoords,
   weatherCodeToLabel,
@@ -8,7 +9,9 @@ import {
   icyLabel,
   pollenLabel
 } from "../services/openMeteo";
-import "./WeatherPage.css";
+import LocationAutocompleteInput from "../components/LocationAutocompleteInput";
+import { loadPresetLocations, parseLatLng } from "../services/locationSearch";
+import "./weatherPage.css";
 
 
 // Keela's comment
@@ -19,44 +22,6 @@ const RUN_BANDS = [
   { id: 3, label: "Evening Run",   timeLabel: "6:00 PM – 12:00 AM", icon: "🌆", iconType: "evening"   },
   { id: 4, label: "Night Run",     timeLabel: "12:00 AM – 6:00 AM", icon: "🌙", iconType: "night"     },
 ];
-
-// ── Load CSV locations ────────────────────────────────────────────────────────
-// We inline-parse the CSV that lives next to this file.
-// In your Vite project, place england_locations.csv in src/ (or public/) and
-// adjust the import path if needed.
-let LOCATIONS = [];
-try {
-  // Dynamic import of raw CSV text via Vite's ?raw suffix
-  // We handle this asynchronously in the component below.
-} catch (_) {}
-
-async function loadLocations() {
-  try {
-    const raw = await fetch("/england_locations.csv").then((r) => r.text());
-    const lines = raw.trim().split("\n").slice(1); // skip header
-    return lines.map((line) => {
-      const parts = line.split(",");
-      // Name may contain commas (it won't here, but be safe)
-      const lat = parseFloat(parts[parts.length - 2]);
-      const lng = parseFloat(parts[parts.length - 1]);
-      const name = parts.slice(0, parts.length - 2).join(",").trim();
-      return { name, lat, lng };
-    }).filter((l) => l.name && !isNaN(l.lat) && !isNaN(l.lng));
-  } catch (e) {
-    console.error("Could not load locations CSV", e);
-    return [];
-  }
-}
-
-// ── Parse raw "lat, lng" input ────────────────────────────────────────────────
-function parseLatLng(str) {
-  const m = str.match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
-  if (!m) return null;
-  const lat = parseFloat(m[1]);
-  const lng = parseFloat(m[2]);
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-  return { lat, lng };
-}
 
 // ── WeatherCard ───────────────────────────────────────────────────────────────
 function WeatherCard({ band, weather }) {
@@ -201,71 +166,16 @@ export default function WeatherPage({ onNavigateToRoute }) {
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState("");
   const [inputValue, setInputValue] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null); // { name, lat, lng }
   const [searchedLocation, setSearchedLocation] = useState(null);
   const [locationError, setLocationError] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
   const [locations, setLocations] = useState([]);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const inputRef = useRef(null);
-  const dropdownRef = useRef(null);
 
   // Load CSV on mount
   useEffect(() => {
-    loadLocations().then(setLocations);
+    loadPresetLocations().then(setLocations);
   }, []);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handler = (e) => {
-      if (
-        dropdownRef.current && !dropdownRef.current.contains(e.target) &&
-        inputRef.current && !inputRef.current.contains(e.target)
-      ) {
-        setShowDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const handleInputChange = (e) => {
-    const val = e.target.value;
-    setInputValue(val);
-    setSelectedLocation(null);
-    setLocationError("");
-
-    // Accept raw lat, lng input
-    const parsed = parseLatLng(val.trim());
-    if (parsed) {
-      setSelectedLocation({ name: val.trim(), lat: parsed.lat, lng: parsed.lng });
-      setSuggestions([]);
-      setShowDropdown(false);
-      return;
-    }
-
-    if (val.trim().length < 2) {
-      setSuggestions([]);
-      setShowDropdown(false);
-      return;
-    }
-
-    const lower = val.toLowerCase();
-    const matches = locations
-      .filter((l) => l.name.toLowerCase().startsWith(lower))
-      .slice(0, 8);
-    setSuggestions(matches);
-    setShowDropdown(matches.length > 0);
-  };
-
-  const handleSelectSuggestion = (loc) => {
-    setInputValue(loc.name);
-    setSelectedLocation(loc);
-    setSuggestions([]);
-    setShowDropdown(false);
-    setLocationError("");
-  };
 
   const handleSearch = async () => {
     setLocationError("");
@@ -290,11 +200,18 @@ export default function WeatherPage({ onNavigateToRoute }) {
           setSelectedLocation(exact);
           setInputValue(exact.name);
         } else {
-          setLocationError(
-            "Location not found. Enter a city name or valid lat, lng (e.g. 51.5074, -0.1278)."
-          );
-          setSearchedLocation(null);
-          return;
+          try {
+            const liveLocation = await geocodeCity(inputValue.trim());
+            finalLocation = liveLocation;
+            setSelectedLocation(finalLocation);
+            setInputValue(finalLocation.name);
+          } catch {
+            setLocationError(
+              "Location not found. Enter a city name anywhere in the world or valid lat, lng (e.g. 51.5074, -0.1278)."
+            );
+            setSearchedLocation(null);
+            return;
+          }
         }
       }
     }
@@ -316,11 +233,6 @@ export default function WeatherPage({ onNavigateToRoute }) {
     } finally {
       setWeatherLoading(false);
     }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") handleSearch();
-    if (e.key === "Escape") setShowDropdown(false);
   };
 
   const handleGetCurrentLocation = () => {
@@ -356,7 +268,7 @@ export default function WeatherPage({ onNavigateToRoute }) {
         }
         setGeoLoading(false);
       },
-      (err) => {
+      () => {
         setLocationError("Unable to retrieve your location. Please allow location access.");
         setGeoLoading(false);
       }
@@ -378,49 +290,27 @@ export default function WeatherPage({ onNavigateToRoute }) {
 
           <label className="input-label">Enter Location</label>
 
-          <div className="input-wrapper">
-            <div className="input-row">
-              <div className="autocomplete-container">
-                <input
-                  ref={inputRef}
-                  className={`location-input ${locationError ? "input-error" : ""}`}
-                  type="text"
-                  placeholder="City name or lat, lng"
-                  value={inputValue}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  onFocus={() => suggestions.length > 0 && setShowDropdown(true)}
-                  autoComplete="off"
-                />
-                {showDropdown && (
-                  <ul className="suggestions-dropdown" ref={dropdownRef}>
-                    {suggestions.map((loc, i) => (
-                      <li
-                        key={i}
-                        className="suggestion-item"
-                        onMouseDown={() => handleSelectSuggestion(loc)}
-                      >
-                        <span className="suggestion-name">{loc.name}</span>
-                        <span className="suggestion-coords">
-                          {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </div>
-
-            {locationError && (
-              <p className="location-error">{locationError}</p>
-            )}
-
-            {selectedLocation && (
-              <p className="location-coords">
-                📍 {selectedLocation.lat.toFixed(4)}, {selectedLocation.lng.toFixed(4)}
-              </p>
-            )}
-          </div>
+          <LocationAutocompleteInput
+            query={inputValue}
+            resolvedLocation={selectedLocation}
+            onQueryChange={(value) => {
+              setInputValue(value);
+              setLocationError("");
+            }}
+            onResolvedChange={(location) => {
+              setSelectedLocation(location);
+              setLocationError("");
+            }}
+            presetLocations={locations}
+            placeholder="City name or lat, lng"
+            error={locationError}
+            onEnter={handleSearch}
+            wrapperClassName="input-wrapper"
+            rowClassName="input-row"
+            inputClassName="location-input"
+            errorClassName="location-error"
+            resolvedClassName="location-coords"
+          />
 
           <button
             className="geo-btn"

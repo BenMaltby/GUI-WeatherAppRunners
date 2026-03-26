@@ -212,6 +212,11 @@
   transition: background 0.1s;
 }
 .suggestion-item:hover { background: #f0f7f0; }
+.suggestion-status {
+  padding: 9px 12px;
+  color: #666;
+  font-size: 13px;
+}
 .suggestion-name { font-size: 13px; color: #1a1a1a; font-weight: 500; }
 .suggestion-coords { font-size: 11px; color: #aaa; font-family: monospace; }
 

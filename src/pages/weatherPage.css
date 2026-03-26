@@ -132,6 +132,12 @@
   background: #f0f7f0;
 }
 
+.suggestion-status {
+  padding: 10px 14px;
+  color: #666;
+  font-size: 14px;
+}
+
 .suggestion-name {
   font-size: 14px;
   color: #1a1a1a;

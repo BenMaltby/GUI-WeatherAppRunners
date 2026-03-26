@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
+  geocodeCity,
   getForecastByCoords,
   getAirQualityByCoords,
   weatherCodeToLabel,
@@ -8,25 +9,11 @@ import {
   icyLabel,
   pollenLabel
 } from "../services/openMeteo";
-import "./RouteWeatherPage.css";
+import LocationAutocompleteInput from "../components/LocationAutocompleteInput";
+import { loadPresetLocations, parseLatLng } from "../services/locationSearch";
+import "./routeWeatherPage.css";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-async function loadLocations() {
-  try {
-    const raw = await fetch("/england_locations.csv").then((r) => r.text());
-    const lines = raw.trim().split("\n").slice(1);
-    return lines.map((line) => {
-      const parts = line.split(",");
-      const lat = parseFloat(parts[parts.length - 2]);
-      const lng = parseFloat(parts[parts.length - 1]);
-      const name = parts.slice(0, parts.length - 2).join(",").trim();
-      return { name, lat, lng };
-    }).filter((l) => l.name && !isNaN(l.lat) && !isNaN(l.lng));
-  } catch {
-    return [];
-  }
-}
 
 // Haversine distance in km
 function haversineKm(lat1, lng1, lat2, lng2) {
@@ -44,16 +31,6 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 // Interpolate lat/lng along a segment by fraction t
 function interpolate(lat1, lng1, lat2, lng2, t) {
   return { lat: lat1 + (lat2 - lat1) * t, lng: lng1 + (lng2 - lng1) * t };
-}
-
-// Parse "lat, lng" string — returns { lat, lng } or null
-function parseLatLng(str) {
-  const m = str.match(/^(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)$/);
-  if (!m) return null;
-  const lat = parseFloat(m[1]);
-  const lng = parseFloat(m[2]);
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-  return { lat, lng };
 }
 
 // Build the full list of slider points from key stops.
@@ -127,101 +104,16 @@ function totalRouteKm(keyStops) {
   return d;
 }
 
-// ── LocationInput ─────────────────────────────────────────────────────────────
-function LocationInput({ label, value, onChange, locations, placeholder, error, onGeo, showGeo }) {
-  const [inputVal, setInputVal] = useState(value?.name ?? "");
-  const [suggestions, setSuggestions] = useState([]);
-  const [showDrop, setShowDrop] = useState(false);
-  const inputRef = useRef(null);
-  const dropRef = useRef(null);
-
-  // Sync if parent resets (geo)
-  useEffect(() => {
-    setInputVal(value?.name ?? "");
-  }, [value]);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (dropRef.current && !dropRef.current.contains(e.target) &&
-          inputRef.current && !inputRef.current.contains(e.target)) {
-        setShowDrop(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const handleChange = (e) => {
-    const v = e.target.value;
-    setInputVal(v);
-    onChange(null); // clear resolved location
-
-    // Try lat,lng parse first
-    const parsed = parseLatLng(v);
-    if (parsed) {
-      onChange({ name: v, lat: parsed.lat, lng: parsed.lng });
-      setSuggestions([]);
-      setShowDrop(false);
-      return;
-    }
-
-    if (v.trim().length < 2) { setSuggestions([]); setShowDrop(false); return; }
-    const lower = v.toLowerCase();
-    const matches = locations.filter(l => l.name.toLowerCase().startsWith(lower)).slice(0, 8);
-    setSuggestions(matches);
-    setShowDrop(matches.length > 0);
-  };
-
-  const handleSelect = (loc) => {
-    setInputVal(loc.name);
-    onChange(loc);
-    setSuggestions([]);
-    setShowDrop(false);
-  };
-
-  return (
-    <div className="loc-input-block">
-      <label className="route-input-label">{label}</label>
-      <div className="loc-input-row">
-        <div className="autocomplete-container">
-          <input
-            ref={inputRef}
-            className={`route-input${error ? " input-error" : ""}`}
-            placeholder={placeholder}
-            value={inputVal}
-            onChange={handleChange}
-            onFocus={() => suggestions.length > 0 && setShowDrop(true)}
-            onKeyDown={e => e.key === "Escape" && setShowDrop(false)}
-            autoComplete="off"
-          />
-          {showDrop && (
-            <ul className="suggestions-dropdown" ref={dropRef}>
-              {suggestions.map((loc, i) => (
-                <li key={i} className="suggestion-item" onMouseDown={() => handleSelect(loc)}>
-                  <span className="suggestion-name">{loc.name}</span>
-                  <span className="suggestion-coords">{loc.lat.toFixed(3)}, {loc.lng.toFixed(3)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        {showGeo && (
-          <button className="geo-icon-btn" onClick={onGeo} title="Use my location">📍</button>
-        )}
-      </div>
-      {error && <p className="input-error-msg">{error}</p>}
-      {value && <p className="resolved-coords">{value.lat.toFixed(4)}, {value.lng.toFixed(4)}</p>}
-    </div>
-  );
-}
-
 // ── VerticalSlider ─ ───────────────────────────────────────────────────────────
 function VerticalSlider({ points, activeIndex, onChange }) {
   const trackRef = useRef(null);
   const isDragging = useRef(false);
   const [dragPercent, setDragPercent] = useState(null);
 
-  const percentForIndex = (i) => (points.length < 2 ? 0 : i / (points.length - 1));
+  const percentForIndex = useCallback(
+    (i) => (points.length < 2 ? 0 : i / (points.length - 1)),
+    [points.length]
+  );
   const snappedPercent = percentForIndex(activeIndex);
   const displayPercent = dragPercent !== null ? dragPercent : snappedPercent;
 
@@ -232,7 +124,7 @@ function VerticalSlider({ points, activeIndex, onChange }) {
       if (d < minDist) { minDist = d; nearest = i; }
     });
     return nearest;
-  }, [points]);
+  }, [percentForIndex, points]);
 
   const pctFromEvent = useCallback((clientY) => {
     const rect = trackRef.current.getBoundingClientRect();
@@ -374,8 +266,8 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
   const [locations, setLocations] = useState([]);
   // keyStops: array of { id, resolved: {name,lat,lng}|null, error: string }
   const [keyStops, setKeyStops] = useState([
-    { id: 1, resolved: null, error: "" }, // start
-    { id: 2, resolved: null, error: "" }, // end
+    { id: 1, query: "", resolved: null, error: "" }, // start
+    { id: 2, query: "", resolved: null, error: "" }, // end
   ]);
   const [sliderPoints, setSliderPoints] = useState([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -383,15 +275,17 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
   const [searched, setSearched] = useState(false);
   const nextId = useRef(3);
 
-  useEffect(() => { loadLocations().then(setLocations); }, []);
+  useEffect(() => { loadPresetLocations().then(setLocations); }, []);
 
-  const updateStop = (id, resolved) => {
-    setKeyStops(prev => prev.map(s => s.id === id ? { ...s, resolved, error: "" } : s));
+  const updateStop = (id, updates) => {
+    setKeyStops((prev) =>
+      prev.map((stop) => (stop.id === id ? { ...stop, ...updates, error: "" } : stop))
+    );
   };
 
   const addStop = () => {
     if (keyStops.length >= MAX_STOPS) return;
-    const newStop = { id: nextId.current++, resolved: null, error: "" };
+    const newStop = { id: nextId.current++, query: "", resolved: null, error: "" };
     setKeyStops(prev => {
       const copy = [...prev];
       copy.splice(copy.length - 1, 0, newStop); // insert before end
@@ -413,19 +307,50 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
         if (d < minDist) { minDist = d; nearest = loc; }
       });
       if (nearest) {
-        setKeyStops(prev => prev.map((s, i) => i === 0 ? { ...s, resolved: nearest, error: "" } : s));
+        setKeyStops((prev) =>
+          prev.map((s, i) => (i === 0 ? { ...s, query: nearest.name, resolved: nearest, error: "" } : s))
+        );
       }
     });
   };
 
-  const handleSearch = () => {
-    // Validate all stops resolved
-    let valid = true;
-    const updated = keyStops.map(s => {
-      if (!s.resolved) { valid = false; return { ...s, error: "Please select a valid location." }; }
-      return { ...s, error: "" };
-    });
+  const handleSearch = async () => {
+    const updated = await Promise.all(
+      keyStops.map(async (stop) => {
+        if (stop.resolved) {
+          return { ...stop, error: "" };
+        }
+
+        const trimmed = stop.query.trim();
+        if (!trimmed) {
+          return { ...stop, error: "Please enter a location." };
+        }
+
+        const parsed = parseLatLng(trimmed);
+        if (parsed) {
+          return {
+            ...stop,
+            resolved: { name: trimmed, lat: parsed.lat, lng: parsed.lng },
+            error: "",
+          };
+        }
+
+        try {
+          const resolved = await geocodeCity(trimmed);
+          return {
+            ...stop,
+            query: resolved.name,
+            resolved,
+            error: "",
+          };
+        } catch {
+          return { ...stop, error: "Please select a valid location." };
+        }
+      })
+    );
+
     setKeyStops(updated);
+    const valid = updated.every((stop) => stop.resolved);
     if (!valid) return;
 
     const resolvedStops = updated.map(s => s.resolved);
@@ -503,15 +428,24 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
                     {isStart ? "S" : isEnd ? "E" : idx}
                   </div>
                   <div className="stop-input-area">
-                    <LocationInput
+                    <LocationAutocompleteInput
                       label={isStart ? "Start Point" : isEnd ? "End Point" : `Stop ${idx}`}
-                      value={stop.resolved}
-                      onChange={(loc) => updateStop(stop.id, loc)}
-                      locations={locations}
+                      resolvedLocation={stop.resolved}
+                      query={stop.query}
+                      onQueryChange={(query) => updateStop(stop.id, { query })}
+                      onResolvedChange={(resolved) => updateStop(stop.id, { resolved })}
+                      presetLocations={locations}
                       placeholder="City name or lat, lng"
                       error={stop.error}
                       showGeo={isStart}
                       onGeo={handleGeoForStart}
+                      wrapperClassName="loc-input-block"
+                      rowClassName="loc-input-row"
+                      labelClassName="route-input-label"
+                      inputClassName="route-input"
+                      errorClassName="input-error-msg"
+                      resolvedClassName="resolved-coords"
+                      geoButtonClassName="geo-icon-btn"
                     />
                   </div>
                   {isMiddle && (

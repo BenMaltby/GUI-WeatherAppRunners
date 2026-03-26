@@ -2,9 +2,17 @@ const GEO_BASE = "https://geocoding-api.open-meteo.com/v1/search";
 const WEATHER_BASE = "https://api.open-meteo.com/v1/forecast";
 const AIR_BASE = "https://air-quality-api.open-meteo.com/v1/air-quality";
 
-export async function geocodeCity(name) {
+function formatGeocodeResult(result) {
+  return {
+    name: [result.name, result.admin1, result.country].filter(Boolean).join(", "),
+    lat: result.latitude,
+    lng: result.longitude,
+  };
+}
+
+export async function searchLocations(name, count = 8) {
   const res = await fetch(
-    `${GEO_BASE}?name=${encodeURIComponent(name)}&count=1&language=en&format=json`
+    `${GEO_BASE}?name=${encodeURIComponent(name)}&count=${count}&language=en&format=json`
   );
 
   if (!res.ok) {
@@ -13,10 +21,19 @@ export async function geocodeCity(name) {
 
   const data = await res.json();
   if (!data.results || data.results.length === 0) {
+    return [];
+  }
+
+  return data.results.map(formatGeocodeResult);
+}
+
+export async function geocodeCity(name) {
+  const results = await searchLocations(name, 1);
+  if (!results.length) {
     throw new Error("Location not found");
   }
 
-  return data.results[0];
+  return results[0];
 }
 
 export async function getForecastByCoords(lat, lng) {
