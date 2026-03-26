@@ -27,6 +27,22 @@ const RUN_BANDS = [
 function WeatherCard({ band, weather }) {
   const [expanded, setExpanded] = useState(false);
 
+  if (!weather) {
+    return (
+      <div className="weather-card">
+        <div className="weather-card-header">
+          <div className="run-band-info">
+            <span className="run-band-icon">{band.icon}</span>
+            <div>
+              <p className="run-label">{band.label}</p>
+              <p className="run-time-label">Weather data unavailable</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="weather-card">
       <div className="weather-card-header">
@@ -261,7 +277,9 @@ export default function WeatherPage({ onNavigateToRoute }) {
         if (nearest) {
           setInputValue(nearest.name);
           setSelectedLocation(nearest);
-          setSearchedLocation(nearest);
+          setSearchedLocation(null);
+          setWeatherBands({});
+          setWeatherError("");
           setLocationError("");
         } else {
           setLocationError("Could not match your location to a known city.");
