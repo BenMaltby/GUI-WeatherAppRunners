@@ -265,17 +265,23 @@
   background: #f7f8fa;
   border-radius: 12px;
   padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 /* Header row: band icon + label + time */
 .weather-card-header {
   margin-bottom: 12px;
+  width: 100%;
 }
 
 .run-band-info {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 10px;
+  text-align: center;
 }
 
 .run-band-icon {
@@ -301,8 +307,11 @@
 .weather-card-main {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 14px;
   margin-bottom: 12px;
+  width: 100%;
+  text-align: center;
 }
 
 .weather-icon {
@@ -326,6 +335,7 @@
 /* Stats row */
 .weather-card-stats {
   display: flex;
+  justify-content: center;
   gap: 20px;
   font-size: 13px;
   color: #555;
@@ -333,15 +343,20 @@
   border-bottom: 1px solid #e8e8e8;
   margin-bottom: 10px;
   flex-wrap: wrap;
+  width: 100%;
+  text-align: center;
 }
 
 /* Expanded extra row */
 .weather-card-extra {
   display: flex;
+  justify-content: center;
   gap: 24px;
   padding: 12px 0;
   border-top: 1px solid #e8e8e8;
   animation: slideDown 0.2s ease;
+  width: 100%;
+  flex-wrap: wrap;
 }
 
 @keyframes slideDown {
@@ -353,6 +368,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  align-items: center;
+  text-align: center;
 }
 
 .extra-label {
