@@ -206,6 +206,11 @@
   background: #28a03a;
 }
 
+.get-weather-btn:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
 /* ── Right Results Panel ── */
 .results-panel {
   background: white;
@@ -258,6 +263,13 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.loading-message {
+  text-align: center;
+  color: #666;
+  font-size: 15px;
+  margin: 8px 0 0;
 }
 
 /* ── Weather Card ── */

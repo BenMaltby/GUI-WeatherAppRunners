@@ -262,6 +262,7 @@ const MAX_STOPS = 5; // start + end + 3 middle
 
 export default function RouteWeatherPage({ onNavigateToWeather }) {
   const [activeWeather, setActiveWeather] = useState(null);
+  const [routeLoading, setRouteLoading] = useState(false);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState("");
   const [locations, setLocations] = useState([]);
@@ -316,50 +317,58 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
   };
 
   const handleSearch = async () => {
-    const updated = await Promise.all(
-      keyStops.map(async (stop) => {
-        if (stop.resolved) {
-          return { ...stop, error: "" };
-        }
+    try {
+      setRouteLoading(true);
+      setWeatherError("");
+      setActiveWeather(null);
 
-        const trimmed = stop.query.trim();
-        if (!trimmed) {
-          return { ...stop, error: "Please enter a location." };
-        }
+      const updated = await Promise.all(
+        keyStops.map(async (stop) => {
+          if (stop.resolved) {
+            return { ...stop, error: "" };
+          }
 
-        const parsed = parseLatLng(trimmed);
-        if (parsed) {
-          return {
-            ...stop,
-            resolved: { name: trimmed, lat: parsed.lat, lng: parsed.lng },
-            error: "",
-          };
-        }
+          const trimmed = stop.query.trim();
+          if (!trimmed) {
+            return { ...stop, error: "Please enter a location." };
+          }
 
-        try {
-          const resolved = await geocodeCity(trimmed);
-          return {
-            ...stop,
-            query: resolved.name,
-            resolved,
-            error: "",
-          };
-        } catch {
-          return { ...stop, error: "Please select a valid location." };
-        }
-      })
-    );
+          const parsed = parseLatLng(trimmed);
+          if (parsed) {
+            return {
+              ...stop,
+              resolved: { name: trimmed, lat: parsed.lat, lng: parsed.lng },
+              error: "",
+            };
+          }
 
-    setKeyStops(updated);
-    const valid = updated.every((stop) => stop.resolved);
-    if (!valid) return;
+          try {
+            const resolved = await geocodeCity(trimmed);
+            return {
+              ...stop,
+              query: resolved.name,
+              resolved,
+              error: "",
+            };
+          } catch {
+            return { ...stop, error: "Please select a valid location." };
+          }
+        })
+      );
 
-    const resolvedStops = updated.map(s => s.resolved);
-    const pts = buildSliderPoints(resolvedStops);
-    setSliderPoints(pts);
-    setTotalKm(totalRouteKm(resolvedStops));
-    setActiveIndex(0);
-    setSearched(true);
+      setKeyStops(updated);
+      const valid = updated.every((stop) => stop.resolved);
+      if (!valid) return;
+
+      const resolvedStops = updated.map(s => s.resolved);
+      const pts = buildSliderPoints(resolvedStops);
+      setSliderPoints(pts);
+      setTotalKm(totalRouteKm(resolvedStops));
+      setActiveIndex(0);
+      setSearched(true);
+    } finally {
+      setRouteLoading(false);
+    }
   };
 
   const handleIndexChange = useCallback((i) => setActiveIndex(i), []);
@@ -463,8 +472,12 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
             </button>
           )}
 
-          <button className="get-route-btn" onClick={handleSearch}>
-            Get Route Weather
+          <button
+            className="get-route-btn"
+            onClick={handleSearch}
+            disabled={routeLoading}
+          >
+            {routeLoading ? "Getting Route Weather…" : "Get Route Weather"}
           </button>
 
           {searched && totalKm !== null && (
@@ -510,10 +523,15 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
         <div className="route-results-panel">
           <h2>Route Weather Results</h2>
 
-          {!searched ? (
+          {!searched && !routeLoading ? (
             <div className="route-empty-state">
               <span className="empty-cloud">☁</span>
               <p>Build your route and click Get Route Weather</p>
+            </div>
+          ) : routeLoading ? (
+            <div className="route-empty-state">
+              <span className="empty-cloud">☁</span>
+              <p>Loading route weather…</p>
             </div>
           ) : activePoint ? (
             <WeatherCard

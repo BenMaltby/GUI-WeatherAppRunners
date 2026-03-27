@@ -251,6 +251,11 @@
 }
 .get-route-btn:hover { background: #28a03a; }
 
+.get-route-btn:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
 .distance-badge {
   background: #f0faf1;
   border: 1px solid #c8eacb;

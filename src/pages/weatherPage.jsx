@@ -239,6 +239,8 @@ export default function WeatherPage({ onNavigateToRoute }) {
 
     try {
       setWeatherLoading(true);
+      setSearchedLocation(finalLocation);
+      setWeatherBands({});
 
       const [forecast, airData] = await Promise.all([
         getForecastByCoords(finalLocation.lat, finalLocation.lng),
@@ -343,8 +345,12 @@ export default function WeatherPage({ onNavigateToRoute }) {
             {geoLoading ? "Detecting…" : "📍 Use My Current Location"}
           </button>
 
-          <button className="get-weather-btn" onClick={handleSearch}>
-            Get Weather
+          <button
+            className="get-weather-btn"
+            onClick={handleSearch}
+            disabled={weatherLoading}
+          >
+            {weatherLoading ? "Getting Weather…" : "Get Weather"}
           </button>
         </div>
 
@@ -360,7 +366,7 @@ export default function WeatherPage({ onNavigateToRoute }) {
             <div className="results-list">
               <p className="results-location">{searchedLocation.name}</p>
               {weatherLoading ? (
-                <p>Loading weather data…</p>
+                <p className="loading-message">Loading weather data…</p>
               ) : weatherError ? (
                 <p className="location-error">{weatherError}</p>
               ) : (
