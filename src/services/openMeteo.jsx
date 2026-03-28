@@ -81,7 +81,7 @@ export async function getAirQualityByCoords(lat, lng) {
     latitude: String(lat),
     longitude: String(lng),
     current: ["european_aqi", ...POLLEN_FIELDS].join(","),
-    hourly: POLLEN_FIELDS.join(","),
+    hourly: ["european_aqi", ...POLLEN_FIELDS].join(","),
     timezone: "auto",
   });
 

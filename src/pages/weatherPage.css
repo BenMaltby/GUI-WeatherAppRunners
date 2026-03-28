@@ -286,6 +286,10 @@
 .weather-card-header {
   margin-bottom: 12px;
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
 }
 
 .run-band-info {
@@ -294,6 +298,7 @@
   justify-content: center;
   gap: 10px;
   text-align: center;
+  flex: 1;
 }
 
 .run-band-icon {
@@ -313,6 +318,32 @@
   color: #888;
   margin: 0;
   font-style: italic;
+}
+
+.running-score {
+  min-width: 92px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e0f2fe, #f8fafc);
+  border: 1px solid #bae6fd;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.running-score-label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #0369a1;
+  margin-bottom: 2px;
+}
+
+.running-score-value {
+  display: block;
+  font-size: 28px;
+  line-height: 1;
+  color: #0f172a;
 }
 
 /* Main weather row */
@@ -416,6 +447,16 @@
   .weather-layout {
     flex-direction: column;
     padding: 0 16px 32px;
+  }
+
+  .weather-card-header {
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .running-score {
+    width: 100%;
+    max-width: 180px;
   }
 
   .results-panel {
