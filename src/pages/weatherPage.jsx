@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   geocodeCity,
   getForecastByCoords,
@@ -560,11 +560,43 @@ export default function WeatherPage({ onNavigateToRoute }) {
   const [locationError, setLocationError] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
   const [locations, setLocations] = useState([]);
+  const [pilotPanelHeight, setPilotPanelHeight] = useState(null);
+  const finderPanelRef = useRef(null);
+  const hasExpandedResults =
+    Boolean(searchedLocation) && !weatherLoading && !weatherError;
 
   // Load CSV on mount
   useEffect(() => {
     loadPresetLocations().then(setLocations);
   }, []);
+
+  useEffect(() => {
+    if (!hasExpandedResults) {
+      setPilotPanelHeight(null);
+      return undefined;
+    }
+
+    const panel = finderPanelRef.current;
+    if (!panel) {
+      return undefined;
+    }
+
+    const updateHeight = () => {
+      setPilotPanelHeight(Math.round(panel.getBoundingClientRect().height));
+    };
+
+    updateHeight();
+
+    const observer = new ResizeObserver(() => {
+      updateHeight();
+    });
+
+    observer.observe(panel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [hasExpandedResults, runnerAdvice, weatherLoading]);
 
   const handleSearch = async () => {
     setLocationError("");
@@ -679,9 +711,16 @@ export default function WeatherPage({ onNavigateToRoute }) {
         </button>
       </nav>
 
-      <div className="weather-layout">
+      <div
+        className={`weather-layout${hasExpandedResults ? " weather-layout-expanded" : ""}`}
+        style={
+          hasExpandedResults && pilotPanelHeight
+            ? { "--pilot-panel-height": `${pilotPanelHeight}px` }
+            : undefined
+        }
+      >
         {/* ── Left Panel ── */}
-        <div className="finder-panel">
+        <div className="finder-panel" ref={finderPanelRef}>
           <h2>Weather Finder</h2>
 
           <label className="input-label">Enter Location</label>
@@ -732,7 +771,7 @@ export default function WeatherPage({ onNavigateToRoute }) {
         </div>
 
         {/* ── Right Panel ── */}
-        <div className="results-panel">
+        <div className={`results-panel${hasExpandedResults ? " results-panel-expanded" : ""}`}>
           <h2>Weather Results</h2>
           {!searchedLocation ? (
             <div className="empty-state">

@@ -36,6 +36,10 @@
   align-items: flex-start;
 }
 
+.weather-layout-expanded {
+  align-items: flex-start;
+}
+
 /* ── Left Finder Panel ── */
 .finder-panel {
   background: white;
@@ -323,6 +327,12 @@
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
+.results-panel-expanded {
+  height: var(--pilot-panel-height);
+  max-height: var(--pilot-panel-height);
+  overflow-y: auto;
+}
+
 .results-panel h2 {
   font-size: 24px;
   font-weight: 700;
@@ -576,6 +586,11 @@
   }
 
   .results-panel {
+    max-height: none;
+  }
+
+  .results-panel-expanded {
+    height: auto;
     max-height: none;
   }
 
