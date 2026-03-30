@@ -1,6 +1,8 @@
 const GEO_BASE = "https://geocoding-api.open-meteo.com/v1/search";
 const WEATHER_BASE = "https://api.open-meteo.com/v1/forecast";
 const AIR_BASE = "https://air-quality-api.open-meteo.com/v1/air-quality";
+
+// These are the pollen values I want to request from the API and compare later.
 const POLLEN_FIELDS = [
   "alder_pollen",
   "birch_pollen",
@@ -10,6 +12,8 @@ const POLLEN_FIELDS = [
   "ragweed_pollen",
 ];
 
+// Normalises location text so I can compare results more reliably even if
+// the spacing or capital letters are different.
 function normalizeLocationText(value) {
   return String(value ?? "")
     .toLowerCase()
@@ -17,6 +21,8 @@ function normalizeLocationText(value) {
     .trim();
 }
 
+// Removes repeated place name parts so the final location string does not
+// end up with duplicate values.
 function uniqueLocationParts(parts) {
   const seen = new Set();
 
@@ -31,6 +37,8 @@ function uniqueLocationParts(parts) {
   });
 }
 
+// Builds a readable place name from the geocoding result by combining the
+// most useful location fields in order.
 function buildLocationName(result) {
   return uniqueLocationParts([
     result.name,
@@ -42,6 +50,8 @@ function buildLocationName(result) {
   ]).join(", ");
 }
 
+// Gives each search result a score so closer matches appear first
+// This helps if the API returns several places with similar names
 function scoreLocationResult(result, query) {
   const normalizedQuery = normalizeLocationText(query);
   const queryParts = normalizedQuery.split(",").map((part) => part.trim()).filter(Boolean);
@@ -70,6 +80,7 @@ function scoreLocationResult(result, query) {
   return score;
 }
 
+// Keeps the geocoding result in a simpler format for the rest of the app.
 function formatGeocodeResult(result) {
   return {
     name: buildLocationName(result),
@@ -78,6 +89,8 @@ function formatGeocodeResult(result) {
   };
 }
 
+// Searches for locations using the OpenMeteo geocoding API, then sorts the
+// results so the most relevant matches are shown first
 export async function searchLocations(name, count = 8) {
   const res = await fetch(
     `${GEO_BASE}?name=${encodeURIComponent(name)}&count=${count}&language=en&format=json`
@@ -99,6 +112,7 @@ export async function searchLocations(name, count = 8) {
     .map(formatGeocodeResult);
 }
 
+// Reuses the search function but just returns the single best match
 export async function geocodeCity(name) {
   const results = await searchLocations(name, 8);
   if (!results.length) {
@@ -108,6 +122,8 @@ export async function geocodeCity(name) {
   return results[0];
 }
 
+// Requests the current weather, hourly weather and daily weather for the
+// coordinates the user selected
 export async function getForecastByCoords(lat, lng) {
   const params = new URLSearchParams({
     latitude: String(lat),
@@ -142,6 +158,8 @@ export async function getForecastByCoords(lat, lng) {
   return res.json();
 }
 
+// Gets air quality and pollen data for the same coordinates so it can be
+// displayed alongside the weather data.
 export async function getAirQualityByCoords(lat, lng) {
   const params = new URLSearchParams({
     latitude: String(lat),
@@ -158,6 +176,8 @@ export async function getAirQualityByCoords(lat, lng) {
   return res.json();
 }
 
+// Converts Open-Meteo weather codes into labels and icons that are easier
+// to show in the UI.
 export function weatherCodeToLabel(code) {
   const map = {
     0: { label: "Clear sky", icon: "☀️", iconType: "sunny" },
@@ -184,6 +204,7 @@ export function weatherCodeToLabel(code) {
   return map[code] || { label: "Unknown", icon: "❔", iconType: "cloudy" };
 }
 
+// Converts the AQI number into a simpler text description for the user.
 export function airQualityLabel(aqi) {
   if (aqi == null) return "Unknown";
   if (aqi <= 20) return "Good";
@@ -194,21 +215,27 @@ export function airQualityLabel(aqi) {
   return "Extremely Poor";
 }
 
+// Gives a rough road/ground condition based on weather codes, mainly to show
+// whether conditions are dry, damp or wet.
 export function groundLabel(weatherCode) {
   if ([61, 63, 65, 80, 81, 82].includes(weatherCode)) return "Wet";
   if ([51, 53, 55].includes(weatherCode)) return "Damp";
   return "Dry";
 }
 
+// Marks temperatures around freezing as icy so it is easier to warn the user.
 export function icyLabel(tempC) {
   if (tempC == null) return "Unknown";
   return tempC <= 1 ? "Icy" : "None";
 }
 
+// Filters out invalid pollen values from the API before comparing them.
 function toValidPollenValue(value) {
   return typeof value === "number" && !Number.isNaN(value) ? value : null;
 }
 
+// Finds the highest pollen reading because that is the one I want to use
+// as the overall pollen level.
 export function getPeakPollenValue(pollenValues) {
   const validValues = pollenValues
     .map(toValidPollenValue)
@@ -221,6 +248,7 @@ export function getPeakPollenValue(pollenValues) {
   return Math.max(...validValues);
 }
 
+// Gets the current pollen level from the current air quality data.
 export function getCurrentPollenValue(airData) {
   if (!airData?.current) {
     return null;
@@ -229,6 +257,8 @@ export function getCurrentPollenValue(airData) {
   return getPeakPollenValue(POLLEN_FIELDS.map((field) => airData.current[field]));
 }
 
+// Gets the pollen level for a specific hourly index so hourly cards/graphs
+// can show the matching value for that time.
 export function getHourlyPollenValue(airData, index) {
   if (!airData?.hourly) {
     return null;
@@ -239,6 +269,7 @@ export function getHourlyPollenValue(airData, index) {
   );
 }
 
+// Turns the pollen value into a label that is easier to understand
 export function pollenLabel(pollenValue) {
   if (pollenValue == null) return "Unavailable";
   if (pollenValue < 1) return "Very Low";
