@@ -211,6 +211,101 @@
   cursor: wait;
 }
 
+.runner-advice-card {
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #10261b 0%, #1f5139 100%);
+  color: #f6fff7;
+  box-shadow: 0 14px 28px rgba(16, 38, 27, 0.18);
+}
+
+.runner-advice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.runner-advice-eyebrow {
+  margin: 0 0 4px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(246, 255, 247, 0.72);
+}
+
+.runner-advice-card h3 {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.runner-advice-badge {
+  flex-shrink: 0;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.runner-advice-badge.tone-good {
+  background: #d9f99d;
+  color: #365314;
+}
+
+.runner-advice-badge.tone-mixed {
+  background: #fef08a;
+  color: #854d0e;
+}
+
+.runner-advice-badge.tone-caution {
+  background: #fecaca;
+  color: #991b1b;
+}
+
+.runner-advice-summary {
+  margin: 0 0 16px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(246, 255, 247, 0.9);
+}
+
+.runner-advice-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.runner-advice-section {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.runner-advice-section p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(246, 255, 247, 0.92);
+}
+
+.runner-advice-highlight {
+  background: rgba(194, 255, 214, 0.14);
+  border-color: rgba(194, 255, 214, 0.24);
+}
+
+.runner-advice-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #b8f7c6;
+}
+
 /* ── Right Results Panel ── */
 .results-panel {
   background: white;
@@ -477,5 +572,13 @@
 
   .results-panel {
     max-height: none;
+  }
+
+  .runner-advice-header {
+    flex-direction: column;
+  }
+
+  .runner-advice-badge {
+    align-self: flex-start;
   }
 }

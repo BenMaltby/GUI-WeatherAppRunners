@@ -102,6 +102,63 @@ function WeatherCard({ band, weather }) {
   );
 }
 
+function RunnerAdviceCard({ advice, loading, locationName }) {
+  if (loading) {
+    return (
+      <div className="runner-advice-card">
+        <p className="runner-advice-eyebrow">Runner Advice</p>
+        <h3>Building today&apos;s plan</h3>
+        <p className="runner-advice-summary">
+          Checking the forecast to suggest the best kit, hydration, and run window.
+        </p>
+      </div>
+    );
+  }
+
+  if (!advice) {
+    return (
+      <div className="runner-advice-card">
+        <p className="runner-advice-eyebrow">Runner Advice</p>
+        <h3>Daily running guidance</h3>
+        <p className="runner-advice-summary">
+          Search for a location to get a same-day clothing, hydration, and timing recommendation.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="runner-advice-card">
+      <div className="runner-advice-header">
+        <div>
+          <p className="runner-advice-eyebrow">Runner Advice</p>
+          <h3>{locationName ? `${locationName} today` : "Today"}</h3>
+        </div>
+        <span className={`runner-advice-badge tone-${advice.tone}`}>{advice.badge}</span>
+      </div>
+
+      <p className="runner-advice-summary">{advice.summary}</p>
+
+      <div className="runner-advice-grid">
+        <div className="runner-advice-section">
+          <span className="runner-advice-label">Clothing</span>
+          <p>{advice.clothing}</p>
+        </div>
+
+        <div className="runner-advice-section">
+          <span className="runner-advice-label">Hydration</span>
+          <p>{advice.hydration}</p>
+        </div>
+
+        <div className="runner-advice-section runner-advice-highlight">
+          <span className="runner-advice-label">Best Time To Run</span>
+          <p>{advice.bestTime}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function average(nums) {
   const valid = nums.filter((n) => typeof n === "number");
   if (!valid.length) return null;
@@ -267,6 +324,112 @@ function buildRunningScores(bandSummaries) {
   );
 }
 
+function formatTemperatureRange(minTemp, maxTemp) {
+  if (minTemp == null || maxTemp == null) {
+    return "mixed temperatures";
+  }
+
+  if (Math.round(minTemp) === Math.round(maxTemp)) {
+    return `${Math.round(minTemp)}°C`;
+  }
+
+  return `${Math.round(minTemp)}-${Math.round(maxTemp)}°C`;
+}
+
+function buildRunnerAdvice(bandSummaries, runningScores) {
+  const validBands = bandSummaries.filter((band) => band.hasData);
+  if (!validBands.length) {
+    return null;
+  }
+
+  const minTemp = Math.min(...validBands.map((band) => band.avgTemp ?? Infinity));
+  const maxTemp = Math.max(...validBands.map((band) => band.avgTemp ?? -Infinity));
+  const highestHumidity = Math.max(...validBands.map((band) => band.avgHumidity ?? 0));
+  const highestWind = Math.max(...validBands.map((band) => band.avgWind ?? 0));
+  const worstSeverity = Math.max(...validBands.map((band) => band.conditionSeverity ?? 0));
+  const wettestGround = validBands.some((band) => band.ground === "Wet");
+  const dampGround = validBands.some((band) => band.ground === "Damp");
+  const icyConditions = validBands.some((band) => (band.avgTemp ?? 10) <= 1);
+  const highestPollen = Math.max(...validBands.map((band) => band.peakPollen ?? 0));
+  const highestAqi = Math.max(...validBands.map((band) => band.avgAqi ?? 0));
+  const scoredBands = validBands
+    .map((band) => ({
+      ...band,
+      runningScore: typeof runningScores[band.id] === "number" ? runningScores[band.id] : -1,
+    }))
+    .sort((a, b) => b.runningScore - a.runningScore);
+  const bestBand = scoredBands[0];
+  const bestBandMeta = RUN_BANDS.find((band) => band.id === bestBand.id);
+
+  let clothing;
+  if (maxTemp <= 2) {
+    clothing = "Go with thermal layers, a long-sleeve top, tights, and gloves. A hat or buff will help if you are heading out early.";
+  } else if (maxTemp <= 8) {
+    clothing = "A long-sleeve top with tights or shorts over leggings should work well. Add a light jacket for the colder parts of the day.";
+  } else if (maxTemp <= 15) {
+    clothing = "A breathable long-sleeve or short-sleeve with a light outer layer is a safe choice. You will likely be comfortable once you settle into the run.";
+  } else if (maxTemp <= 22) {
+    clothing = "Shorts and a light technical tee should be comfortable. Keep layers minimal so you do not overheat once moving.";
+  } else {
+    clothing = "Choose your lightest, most breathable kit. Shorts, a moisture-wicking top, and a cap or sunglasses will suit the warmer conditions.";
+  }
+
+  if (wettestGround || dampGround || worstSeverity >= 0.5) {
+    clothing += " Conditions look damp or wet at points, so grippy shoes and a light water-resistant layer would be smart.";
+  } else if (highestWind >= 20) {
+    clothing += " It may feel breezier at times, so a thin wind-resistant layer is worth having.";
+  }
+
+  if (icyConditions) {
+    clothing += " Watch for icy patches, especially on shaded paths and bridges.";
+  }
+
+  let hydration;
+  if (maxTemp >= 24 || highestHumidity >= 80) {
+    hydration = "Carry water and drink before you head out. For a longer run, add electrolytes and avoid waiting until you feel thirsty.";
+  } else if (maxTemp >= 18 || highestHumidity >= 70) {
+    hydration = "Take water with you if you are planning more than an easy short run. A good drink before and after should help you stay ahead of the conditions.";
+  } else {
+    hydration = "Standard hydration should be enough for most runs today, but a quick drink before and after is still a good habit.";
+  }
+
+  if (highestPollen >= 80) {
+    hydration += " Pollen is on the higher side, so rinsing off and changing clothes after the run may help.";
+  }
+
+  if (highestAqi >= 60) {
+    hydration += " Air quality is not ideal, so keep the effort easier if your breathing feels irritated.";
+  }
+
+  const bestTime = bestBandMeta
+    ? `${bestBandMeta.label} (${bestBandMeta.timeLabel}) looks strongest, with the best overall running score and the most manageable mix of temperature and conditions.`
+    : "The most comfortable run window appears to be the highest-scoring part of the day.";
+
+  const score = bestBand.runningScore;
+  let badge = "Favourable";
+  let tone = "good";
+  let summary = `Expect ${formatTemperatureRange(minTemp, maxTemp)} across the day, so this looks like a solid running day overall.`;
+
+  if (score < 45) {
+    badge = "Caution";
+    tone = "caution";
+    summary = `Today looks more challenging for runners, with ${formatTemperatureRange(minTemp, maxTemp)} and less friendly conditions at several points in the day.`;
+  } else if (score < 70) {
+    badge = "Mixed";
+    tone = "mixed";
+    summary = `Conditions are runnable but uneven, with ${formatTemperatureRange(minTemp, maxTemp)} and some trade-offs depending on when you go out.`;
+  }
+
+  return {
+    badge,
+    tone,
+    summary,
+    clothing,
+    hydration,
+    bestTime,
+  };
+}
+
 function inBand(hour, bandId) {
   if (bandId === 1) return hour >= 6 && hour < 12;
   if (bandId === 2) return hour >= 12 && hour < 18;
@@ -328,6 +491,7 @@ function buildBandWeather(forecast, airData) {
       avgAqi,
       commonCode,
       peakPollen,
+      ground,
       conditionSeverity: weatherSeverity(commonCode),
       groundPenalty: groundPenalty(ground),
       pollenPenalty: pollenPenalty(peakPollen),
@@ -338,6 +502,7 @@ function buildBandWeather(forecast, airData) {
 
   const runningScores = buildRunningScores(bandSummaries);
   const bandWeather = {};
+  const runnerAdvice = buildRunnerAdvice(bandSummaries, runningScores);
 
   for (const summary of bandSummaries) {
     if (!summary.hasData) {
@@ -379,13 +544,14 @@ function buildBandWeather(forecast, airData) {
     };
   }
 
-  return bandWeather;
+  return { bandWeather, runnerAdvice };
 }
 
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function WeatherPage({ onNavigateToRoute }) {
   const [weatherBands, setWeatherBands] = useState({});
+  const [runnerAdvice, setRunnerAdvice] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState("");
   const [inputValue, setInputValue] = useState("");
@@ -443,18 +609,21 @@ export default function WeatherPage({ onNavigateToRoute }) {
       setWeatherLoading(true);
       setSearchedLocation(finalLocation);
       setWeatherBands({});
+      setRunnerAdvice(null);
 
       const [forecast, airData] = await Promise.all([
         getForecastByCoords(finalLocation.lat, finalLocation.lng),
         getAirQualityByCoords(finalLocation.lat, finalLocation.lng).catch(() => null)
       ]);
 
-      const bandData = buildBandWeather(forecast, airData);
-      setWeatherBands(bandData);
+      const { bandWeather, runnerAdvice: nextRunnerAdvice } = buildBandWeather(forecast, airData);
+      setWeatherBands(bandWeather);
+      setRunnerAdvice(nextRunnerAdvice);
       setSearchedLocation(finalLocation);
     } catch (err) {
       setWeatherError(err.message || "Failed to fetch weather data");
       setSearchedLocation(null);
+      setRunnerAdvice(null);
     } finally {
       setWeatherLoading(false);
     }
@@ -554,6 +723,12 @@ export default function WeatherPage({ onNavigateToRoute }) {
           >
             {weatherLoading ? "Getting Weather…" : "Get Weather"}
           </button>
+
+          <RunnerAdviceCard
+            advice={runnerAdvice}
+            loading={weatherLoading}
+            locationName={searchedLocation?.name}
+          />
         </div>
 
         {/* ── Right Panel ── */}
