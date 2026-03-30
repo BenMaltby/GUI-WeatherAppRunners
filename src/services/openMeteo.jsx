@@ -50,6 +50,7 @@ export async function getForecastByCoords(lat, lng) {
     longitude: String(lng),
     hourly: [
       "temperature_2m",
+      "apparent_temperature",
       "relative_humidity_2m",
       "weather_code",
       "wind_speed_10m"
@@ -61,6 +62,7 @@ export async function getForecastByCoords(lat, lng) {
     ].join(","),
     current: [
       "temperature_2m",
+      "apparent_temperature",
       "relative_humidity_2m",
       "weather_code",
       "wind_speed_10m"

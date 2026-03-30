@@ -64,7 +64,10 @@ function WeatherCard({ band, weather }) {
       <div className="weather-card-main">
         <span className={`weather-icon ${weather.iconType}`}>{weather.icon}</span>
         <div className="weather-card-info">
-          <p className="run-temp">{weather.temp}</p>
+          <div className="run-temp-row">
+            <p className="run-temp">{weather.temp}</p>
+            {weather.feelsLike && <p className="run-feels-like">{weather.feelsLike}</p>}
+          </div>
           <p className="run-condition">{weather.condition}</p>
         </div>
       </div>
@@ -232,14 +235,14 @@ function buildRunningScores(bandSummaries) {
     const iceScore = 1 - band.icyPenalty;
 
     rawScores[band.id] =
-      temperatureScore * 0.3 +
-      conditionScore * 0.18 +
-      windScore * 0.08 +
-      humidityScore * 0.1 +
-      groundScore * 0.1 +
-      airQualityScore * 0.1 +
-      pollenScore * 0.08 +
-      iceScore * 0.06;
+      temperatureScore * 0.35 +
+      conditionScore * 0.24 +
+      groundScore * 0.18 +
+      humidityScore * 0.07 +
+      windScore * 0.05 +
+      airQualityScore * 0.05 +
+      pollenScore * 0.04 +
+      iceScore * 0.02;
   }
 
   const rawValues = Object.values(rawScores);
@@ -295,6 +298,7 @@ function buildBandWeather(forecast, airData) {
     }
 
     const temps = indices.map((i) => hourly.temperature_2m[i]);
+    const apparentTemps = indices.map((i) => hourly.apparent_temperature[i]);
     const humidity = indices.map((i) => hourly.relative_humidity_2m[i]);
     const wind = indices.map((i) => hourly.wind_speed_10m[i]);
     const codes = indices.map((i) => hourly.weather_code[i]);
@@ -306,6 +310,7 @@ function buildBandWeather(forecast, airData) {
       .filter((value) => value != null);
 
     const avgTemp = average(temps);
+    const avgApparentTemp = average(apparentTemps);
     const avgHumidity = average(humidity);
     const avgWind = average(wind);
     const avgAqi = average(aqiValues) ?? currentAqi;
@@ -317,6 +322,7 @@ function buildBandWeather(forecast, airData) {
       id: band.id,
       hasData: true,
       avgTemp,
+      avgApparentTemp,
       avgHumidity,
       avgWind,
       avgAqi,
@@ -337,6 +343,7 @@ function buildBandWeather(forecast, airData) {
     if (!summary.hasData) {
       bandWeather[summary.id] = {
         temp: "—",
+        feelsLike: null,
         condition: "No data",
         icon: "❔",
         iconType: "cloudy",
@@ -355,6 +362,10 @@ function buildBandWeather(forecast, airData) {
 
     bandWeather[summary.id] = {
       temp: summary.avgTemp == null ? "—" : `${Math.round(summary.avgTemp)}°C`,
+      feelsLike:
+        summary.avgApparentTemp == null
+          ? null
+          : `Feels like ${Math.round(summary.avgApparentTemp)}°C`,
       condition: weatherMeta.label,
       icon: weatherMeta.icon,
       iconType: weatherMeta.iconType,

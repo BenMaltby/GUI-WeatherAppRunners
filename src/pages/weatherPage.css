@@ -366,7 +366,23 @@
   font-size: 26px;
   font-weight: 700;
   color: #1a1a1a;
-  margin: 0 0 2px;
+  margin: 0;
+}
+
+.run-temp-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 2px;
+  flex-wrap: wrap;
+}
+
+.weather-card-info .run-feels-like {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5f6b7a;
+  margin: 0;
 }
 
 .weather-card-info .run-condition {

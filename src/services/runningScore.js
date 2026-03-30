@@ -151,14 +151,14 @@ function buildRawScores(profiles) {
       const iceScore = 1 - profile.icyPenalty;
 
       const rawScore =
-        temperatureScore * 0.24 +
-        conditionScore * 0.18 +
-        windScore * 0.14 +
-        humidityScore * 0.1 +
-        groundScore * 0.1 +
-        airQualityScore * 0.1 +
-        pollenScore * 0.08 +
-        iceScore * 0.06;
+        temperatureScore * 0.35 +
+        conditionScore * 0.24 +
+        groundScore * 0.18 +
+        humidityScore * 0.07 +
+        windScore * 0.05 +
+        airQualityScore * 0.05 +
+        pollenScore * 0.04 +
+        iceScore * 0.02;
 
       return [profile, rawScore];
     })
