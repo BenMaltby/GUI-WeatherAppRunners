@@ -109,7 +109,7 @@ function RunnerAdviceCard({ advice, loading, locationName }) {
         <p className="runner-advice-eyebrow">Runner Advice</p>
         <h3>Building today&apos;s plan</h3>
         <p className="runner-advice-summary">
-          Checking the forecast to suggest the best kit, hydration, and run window.
+          Checking the best run time, kit, and hydration.
         </p>
       </div>
     );
@@ -140,6 +140,11 @@ function RunnerAdviceCard({ advice, loading, locationName }) {
       <p className="runner-advice-summary">{advice.summary}</p>
 
       <div className="runner-advice-grid">
+        <div className="runner-advice-section runner-advice-highlight">
+          <span className="runner-advice-label">Best Time To Run</span>
+          <p>{advice.bestTime}</p>
+        </div>
+
         <div className="runner-advice-section">
           <span className="runner-advice-label">Clothing</span>
           <p>{advice.clothing}</p>
@@ -148,11 +153,6 @@ function RunnerAdviceCard({ advice, loading, locationName }) {
         <div className="runner-advice-section">
           <span className="runner-advice-label">Hydration</span>
           <p>{advice.hydration}</p>
-        </div>
-
-        <div className="runner-advice-section runner-advice-highlight">
-          <span className="runner-advice-label">Best Time To Run</span>
-          <p>{advice.bestTime}</p>
         </div>
       </div>
     </div>
@@ -363,61 +363,61 @@ function buildRunnerAdvice(bandSummaries, runningScores) {
 
   let clothing;
   if (maxTemp <= 2) {
-    clothing = "Go with thermal layers, a long-sleeve top, tights, and gloves. A hat or buff will help if you are heading out early.";
+    clothing = "Thermal layers, tights, gloves, and a hat or buff.";
   } else if (maxTemp <= 8) {
-    clothing = "A long-sleeve top with tights or shorts over leggings should work well. Add a light jacket for the colder parts of the day.";
+    clothing = "Long sleeves, tights, and a light jacket.";
   } else if (maxTemp <= 15) {
-    clothing = "A breathable long-sleeve or short-sleeve with a light outer layer is a safe choice. You will likely be comfortable once you settle into the run.";
+    clothing = "Light layers with a breathable top.";
   } else if (maxTemp <= 22) {
-    clothing = "Shorts and a light technical tee should be comfortable. Keep layers minimal so you do not overheat once moving.";
+    clothing = "Shorts and a light technical tee.";
   } else {
-    clothing = "Choose your lightest, most breathable kit. Shorts, a moisture-wicking top, and a cap or sunglasses will suit the warmer conditions.";
+    clothing = "Light, breathable kit with a cap or sunglasses.";
   }
 
   if (wettestGround || dampGround || worstSeverity >= 0.5) {
-    clothing += " Conditions look damp or wet at points, so grippy shoes and a light water-resistant layer would be smart.";
+    clothing += " Add grippy shoes and a light rain layer.";
   } else if (highestWind >= 20) {
-    clothing += " It may feel breezier at times, so a thin wind-resistant layer is worth having.";
+    clothing += " Take a light wind layer.";
   }
 
   if (icyConditions) {
-    clothing += " Watch for icy patches, especially on shaded paths and bridges.";
+    clothing += " Watch for icy patches.";
   }
 
   let hydration;
   if (maxTemp >= 24 || highestHumidity >= 80) {
-    hydration = "Carry water and drink before you head out. For a longer run, add electrolytes and avoid waiting until you feel thirsty.";
+    hydration = "Carry water. Add electrolytes for longer runs.";
   } else if (maxTemp >= 18 || highestHumidity >= 70) {
-    hydration = "Take water with you if you are planning more than an easy short run. A good drink before and after should help you stay ahead of the conditions.";
+    hydration = "Drink before and after. Carry water for longer runs.";
   } else {
-    hydration = "Standard hydration should be enough for most runs today, but a quick drink before and after is still a good habit.";
+    hydration = "Normal hydration should be enough. Drink before and after.";
   }
 
   if (highestPollen >= 80) {
-    hydration += " Pollen is on the higher side, so rinsing off and changing clothes after the run may help.";
+    hydration += " Rinse off after if pollen affects you.";
   }
 
   if (highestAqi >= 60) {
-    hydration += " Air quality is not ideal, so keep the effort easier if your breathing feels irritated.";
+    hydration += " Keep effort easier if breathing feels irritated.";
   }
 
   const bestTime = bestBandMeta
-    ? `${bestBandMeta.label} (${bestBandMeta.timeLabel}) looks strongest, with the best overall running score and the most manageable mix of temperature and conditions.`
-    : "The most comfortable run window appears to be the highest-scoring part of the day.";
+    ? `${bestBandMeta.label} (${bestBandMeta.timeLabel}) is your best window today.`
+    : "The highest-scoring part of the day looks best.";
 
   const score = bestBand.runningScore;
   let badge = "Favourable";
   let tone = "good";
-  let summary = `Expect ${formatTemperatureRange(minTemp, maxTemp)} across the day, so this looks like a solid running day overall.`;
+  let summary = `${formatTemperatureRange(minTemp, maxTemp)} overall. Good running conditions.`;
 
   if (score < 45) {
     badge = "Caution";
     tone = "caution";
-    summary = `Today looks more challenging for runners, with ${formatTemperatureRange(minTemp, maxTemp)} and less friendly conditions at several points in the day.`;
+    summary = `${formatTemperatureRange(minTemp, maxTemp)} overall. Pick your run time carefully.`;
   } else if (score < 70) {
     badge = "Mixed";
     tone = "mixed";
-    summary = `Conditions are runnable but uneven, with ${formatTemperatureRange(minTemp, maxTemp)} and some trade-offs depending on when you go out.`;
+    summary = `${formatTemperatureRange(minTemp, maxTemp)} overall. Conditions are mixed.`;
   }
 
   return {
