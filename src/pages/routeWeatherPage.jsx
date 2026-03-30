@@ -4,6 +4,7 @@ import {
   getForecastByCoords,
   getAirQualityByCoords,
   getCurrentPollenValue,
+  getHourlyPollenValue,
   weatherCodeToLabel,
   airQualityLabel,
   groundLabel,
@@ -12,6 +13,10 @@ import {
 } from "../services/openMeteo";
 import LocationAutocompleteInput from "../components/LocationAutocompleteInput";
 import { loadPresetLocations, parseLatLng } from "../services/locationSearch";
+import {
+  createRunningProfile,
+  buildRunningScoreForProfile
+} from "../services/runningScore";
 import "./routeWeatherPage.css";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -103,6 +108,25 @@ function totalRouteKm(keyStops) {
     d += haversineKm(keyStops[i].lat, keyStops[i].lng, keyStops[i + 1].lat, keyStops[i + 1].lng);
   }
   return d;
+}
+
+function buildRouteReferenceProfiles(forecast, airData) {
+  const hourly = forecast?.hourly;
+  if (!hourly?.time?.length) {
+    return [];
+  }
+
+  return hourly.time.slice(0, 24).map((_, index) =>
+    createRunningProfile({
+      id: `hour-${index}`,
+      temp: hourly.temperature_2m?.[index] ?? null,
+      humidity: hourly.relative_humidity_2m?.[index] ?? null,
+      wind: hourly.wind_speed_10m?.[index] ?? null,
+      aqi: airData?.hourly?.european_aqi?.[index] ?? airData?.current?.european_aqi ?? null,
+      weatherCode: hourly.weather_code?.[index] ?? null,
+      peakPollen: getHourlyPollenValue(airData, index),
+    })
+  );
 }
 
 // ── VerticalSlider ─ ───────────────────────────────────────────────────────────
@@ -219,19 +243,31 @@ function WeatherCard({ point, index, total, weather, loading, error }) {
   return (
     <div className="route-weather-card">
       <div className="route-card-top-row">
-        <p className="route-position">
-          {point.isKeyStop ? <span className="key-stop-badge">📍 Key Stop</span> : "Waypoint"}{" "}
-          · {point.name}
-        </p>
-        <p className="route-position-sub">
-          Point {index + 1}/{total} · ~{point.distFromStart.toFixed(1)} km from start
-        </p>
+        <div className="route-card-header">
+          <div>
+            <p className="route-position">
+              {point.isKeyStop ? <span className="key-stop-badge">📍 Key Stop</span> : "Waypoint"}{" "}
+              · {point.name}
+            </p>
+            <p className="route-position-sub">
+              Point {index + 1}/{total} · ~{point.distFromStart.toFixed(1)} km from start
+            </p>
+          </div>
+
+          <div className="route-running-score">
+            <span className="route-running-score-label">Running Score</span>
+            <strong className="route-running-score-value">{weather.runningScore}</strong>
+          </div>
+        </div>
       </div>
 
       <div className="route-card-main">
         <span className={`route-icon ${weather.iconType}`}>{weather.icon}</span>
         <div>
-          <p className="route-temp">{weather.temp}</p>
+          <div className="route-temp-row">
+            <p className="route-temp">{weather.temp}</p>
+            {weather.feelsLike && <p className="route-feels-like">{weather.feelsLike}</p>}
+          </div>
           <p className="route-condition">{weather.condition}</p>
         </div>
       </div>
@@ -391,9 +427,26 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
 
         const current = forecast.current;
         const meta = weatherCodeToLabel(current.weather_code);
+        const currentProfile = createRunningProfile({
+          id: "current",
+          temp: current.temperature_2m ?? null,
+          humidity: current.relative_humidity_2m ?? null,
+          wind: current.wind_speed_10m ?? null,
+          aqi: airData?.current?.european_aqi ?? null,
+          weatherCode: current.weather_code ?? null,
+          peakPollen: getCurrentPollenValue(airData),
+        });
+        const runningScore = buildRunningScoreForProfile(
+          currentProfile,
+          buildRouteReferenceProfiles(forecast, airData)
+        );
 
         setActiveWeather({
           temp: current.temperature_2m == null ? "—" : `${Math.round(current.temperature_2m)}°C`,
+          feelsLike:
+            current.apparent_temperature == null
+              ? null
+              : `Feels like ${Math.round(current.apparent_temperature)}°C`,
           condition: meta.label,
           icon: meta.icon,
           iconType: meta.iconType,
@@ -402,7 +455,8 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
           ground: groundLabel(current.weather_code),
           pollen: pollenLabel(getCurrentPollenValue(airData)),
           airQuality: airQualityLabel(airData?.current?.european_aqi),
-          icyness: icyLabel(current.temperature_2m)
+          icyness: icyLabel(current.temperature_2m),
+          runningScore
         });
       } catch (err) {
         setWeatherError(err.message || "Failed to fetch route weather");

@@ -498,6 +498,14 @@
   text-align: center;
 }
 
+.route-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+}
+
 .route-position {
   font-size: 13px;
   color: #555;
@@ -509,6 +517,32 @@
   flex-wrap: wrap;
 }
 .route-position-sub { font-size: 12px; color: #aaa; margin: 0; }
+
+.route-running-score {
+  min-width: 82px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #eff6ff, #f8fafc);
+  border: 1px solid #dbeafe;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.route-running-score-label {
+  display: block;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #1d4ed8;
+  margin-bottom: 2px;
+}
+
+.route-running-score-value {
+  display: block;
+  font-size: 20px;
+  line-height: 1;
+  color: #0f172a;
+}
 
 .key-stop-badge {
   display: inline-flex;
@@ -532,7 +566,21 @@
   text-align: center;
 }
 .route-icon { font-size: 42px; line-height: 1; }
-.route-temp { font-size: 30px; font-weight: 700; color: #1a1a1a; margin: 0 0 3px; }
+.route-temp-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 3px;
+  flex-wrap: wrap;
+}
+.route-temp { font-size: 30px; font-weight: 700; color: #1a1a1a; margin: 0; }
+.route-feels-like {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5f6b7a;
+  margin: 0;
+}
 .route-condition { font-size: 14px; color: #666; margin: 0; }
 
 .route-stats {
@@ -593,6 +641,17 @@
     flex-direction: column;
     padding: 0 16px 32px;
   }
+
+  .route-card-header {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .route-running-score {
+    width: 100%;
+    max-width: 150px;
+  }
+
   .route-slider-panel {
     flex-direction: row;
     flex: none;
