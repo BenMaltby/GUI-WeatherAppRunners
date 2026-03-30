@@ -21,6 +21,65 @@ import "./routeWeatherPage.css";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+function formatTimeInputValue(date) {
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+}
+
+function buildNextDepartureDateTime(timeValue) {
+  const [hoursText = "0", minutesText = "0"] = String(timeValue ?? "").split(":");
+  const hours = Number.parseInt(hoursText, 10);
+  const minutes = Number.parseInt(minutesText, 10);
+  const now = new Date();
+
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return now;
+  }
+
+  const departure = new Date(now);
+  departure.setHours(hours, minutes, 0, 0);
+
+  if (departure.getTime() < now.getTime()) {
+    departure.setDate(departure.getDate() + 1);
+  }
+
+  return departure;
+}
+
+function getClosestHourlyIndex(hourlyTimes, targetDate) {
+  if (!hourlyTimes?.length) {
+    return -1;
+  }
+
+  let nearestIndex = 0;
+  let nearestDiff = Infinity;
+
+  hourlyTimes.forEach((time, index) => {
+    const forecastDate = new Date(time);
+    const diff = Math.abs(forecastDate.getTime() - targetDate.getTime());
+
+    if (diff < nearestDiff) {
+      nearestDiff = diff;
+      nearestIndex = index;
+    }
+  });
+
+  return nearestIndex;
+}
+
+function formatForecastMoment(value) {
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
 // Haversine distance in km
 function haversineKm(lat1, lng1, lat2, lng2) {
   const R = 6371;
@@ -252,6 +311,11 @@ function WeatherCard({ point, index, total, weather, loading, error }) {
             <p className="route-position-sub">
               Point {index + 1}/{total} · ~{point.distFromStart.toFixed(1)} km from start
             </p>
+            {weather.forecastTimeLabel && (
+              <p className="route-forecast-sub">
+                Depart at {weather.departAtLabel} · Forecast used {weather.forecastTimeLabel}
+              </p>
+            )}
           </div>
 
           <div className="route-running-score">
@@ -298,6 +362,7 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
   const [routeLoading, setRouteLoading] = useState(false);
   const [weatherLoading, setWeatherLoading] = useState(false);
   const [weatherError, setWeatherError] = useState("");
+  const [departureTime, setDepartureTime] = useState(() => formatTimeInputValue(new Date()));
   const [locations, setLocations] = useState([]);
   // keyStops: array of { id, resolved: {name,lat,lng}|null, error: string }
   const [keyStops, setKeyStops] = useState([
@@ -422,38 +487,71 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
           getAirQualityByCoords(activePoint.lat, activePoint.lng).catch(() => null)
         ]);
 
-        const current = forecast.current;
-        const meta = weatherCodeToLabel(current.weather_code);
-        const currentProfile = createRunningProfile({
-          id: "current",
-          temp: current.temperature_2m ?? null,
-          humidity: current.relative_humidity_2m ?? null,
-          wind: current.wind_speed_10m ?? null,
-          aqi: airData?.current?.european_aqi ?? null,
-          weatherCode: current.weather_code ?? null,
-          peakPollen: getCurrentPollenValue(airData),
+        const targetDeparture = buildNextDepartureDateTime(departureTime);
+        const forecastIndex = getClosestHourlyIndex(forecast?.hourly?.time, targetDeparture);
+        const hasHourlyForecast = forecastIndex >= 0;
+        const weatherSource = hasHourlyForecast
+          ? {
+              temperature_2m: forecast.hourly.temperature_2m?.[forecastIndex] ?? null,
+              apparent_temperature: forecast.hourly.apparent_temperature?.[forecastIndex] ?? null,
+              relative_humidity_2m: forecast.hourly.relative_humidity_2m?.[forecastIndex] ?? null,
+              wind_speed_10m: forecast.hourly.wind_speed_10m?.[forecastIndex] ?? null,
+              weather_code: forecast.hourly.weather_code?.[forecastIndex] ?? null,
+            }
+          : forecast.current;
+        const forecastTimeLabel = hasHourlyForecast
+          ? formatForecastMoment(forecast.hourly.time?.[forecastIndex])
+          : "current conditions";
+        const departureLabel = formatForecastMoment(targetDeparture);
+        const meta = weatherCodeToLabel(weatherSource.weather_code);
+        const selectedProfile = createRunningProfile({
+          id: hasHourlyForecast ? `hour-${forecastIndex}` : "current",
+          temp: weatherSource.temperature_2m ?? null,
+          humidity: weatherSource.relative_humidity_2m ?? null,
+          wind: weatherSource.wind_speed_10m ?? null,
+          aqi: hasHourlyForecast
+            ? airData?.hourly?.european_aqi?.[forecastIndex] ?? airData?.current?.european_aqi ?? null
+            : airData?.current?.european_aqi ?? null,
+          weatherCode: weatherSource.weather_code ?? null,
+          peakPollen: hasHourlyForecast
+            ? getHourlyPollenValue(airData, forecastIndex)
+            : getCurrentPollenValue(airData),
         });
         const runningScore = buildRunningScoreForProfile(
-          currentProfile,
+          selectedProfile,
           buildRouteReferenceProfiles(forecast, airData)
         );
 
         setActiveWeather({
-          temp: current.temperature_2m == null ? "—" : `${Math.round(current.temperature_2m)}°C`,
+          temp: weatherSource.temperature_2m == null ? "—" : `${Math.round(weatherSource.temperature_2m)}°C`,
           feelsLike:
-            current.apparent_temperature == null
+            weatherSource.apparent_temperature == null
               ? null
-              : `Feels like ${Math.round(current.apparent_temperature)}°C`,
+              : `Feels like ${Math.round(weatherSource.apparent_temperature)}°C`,
           condition: meta.label,
           icon: meta.icon,
           iconType: meta.iconType,
-          humidity: current.relative_humidity_2m == null ? "—" : `${Math.round(current.relative_humidity_2m)}%`,
-          wind: current.wind_speed_10m == null ? "—" : `${Math.round(current.wind_speed_10m)} km/h`,
-          ground: groundLabel(current.weather_code),
-          pollen: pollenLabel(getCurrentPollenValue(airData)),
-          airQuality: airQualityLabel(airData?.current?.european_aqi),
-          icyness: icyLabel(current.temperature_2m),
-          runningScore
+          humidity:
+            weatherSource.relative_humidity_2m == null
+              ? "—"
+              : `${Math.round(weatherSource.relative_humidity_2m)}%`,
+          wind:
+            weatherSource.wind_speed_10m == null
+              ? "—"
+              : `${Math.round(weatherSource.wind_speed_10m)} km/h`,
+          ground: groundLabel(weatherSource.weather_code),
+          pollen: pollenLabel(
+            hasHourlyForecast ? getHourlyPollenValue(airData, forecastIndex) : getCurrentPollenValue(airData)
+          ),
+          airQuality: airQualityLabel(
+            hasHourlyForecast
+              ? airData?.hourly?.european_aqi?.[forecastIndex] ?? airData?.current?.european_aqi
+              : airData?.current?.european_aqi
+          ),
+          icyness: icyLabel(weatherSource.temperature_2m),
+          runningScore,
+          departAtLabel: departureLabel,
+          forecastTimeLabel
         });
       } catch (err) {
         setWeatherError(err.message || "Failed to fetch route weather");
@@ -464,7 +562,7 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
     }
 
     loadPointWeather();
-  }, [activePoint]);
+  }, [activePoint, departureTime]);
 
   return (
     <div className="route-page">
@@ -522,6 +620,22 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
               + Add Stop
             </button>
           )}
+
+          <div className="route-time-block">
+            <label className="route-input-label" htmlFor="route-departure-time">
+              Depart At
+            </label>
+            <input
+              id="route-departure-time"
+              className="route-input route-time-input"
+              type="time"
+              value={departureTime}
+              onChange={(event) => setDepartureTime(event.target.value)}
+            />
+            <p className="route-time-help">
+              Weather along the route will use the closest forecast hour to this departure time.
+            </p>
+          </div>
 
           <button
             className="get-route-btn"

@@ -10,9 +10,69 @@ const POLLEN_FIELDS = [
   "ragweed_pollen",
 ];
 
+function normalizeLocationText(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function uniqueLocationParts(parts) {
+  const seen = new Set();
+
+  return parts.filter((part) => {
+    const normalized = normalizeLocationText(part);
+    if (!normalized || seen.has(normalized)) {
+      return false;
+    }
+
+    seen.add(normalized);
+    return true;
+  });
+}
+
+function buildLocationName(result) {
+  return uniqueLocationParts([
+    result.name,
+    result.admin4,
+    result.admin3,
+    result.admin2,
+    result.admin1,
+    result.country,
+  ]).join(", ");
+}
+
+function scoreLocationResult(result, query) {
+  const normalizedQuery = normalizeLocationText(query);
+  const queryParts = normalizedQuery.split(",").map((part) => part.trim()).filter(Boolean);
+  const name = normalizeLocationText(result.name);
+  const fullName = normalizeLocationText(buildLocationName(result));
+
+  let score = 0;
+
+  if (name === normalizedQuery) score += 200;
+  if (fullName === normalizedQuery) score += 260;
+  if (name.startsWith(normalizedQuery)) score += 80;
+  if (fullName.startsWith(normalizedQuery)) score += 120;
+  if (name.includes(normalizedQuery)) score += 40;
+  if (fullName.includes(normalizedQuery)) score += 60;
+
+  queryParts.forEach((part, index) => {
+    if (fullName.includes(part)) {
+      score += 30;
+    }
+
+    if (index === 0 && name.startsWith(part)) {
+      score += 50;
+    }
+  });
+
+  return score;
+}
+
 function formatGeocodeResult(result) {
   return {
-    name: [result.name, result.admin1, result.country].filter(Boolean).join(", "),
+    name: buildLocationName(result),
     lat: result.latitude,
     lng: result.longitude,
   };
@@ -32,11 +92,15 @@ export async function searchLocations(name, count = 8) {
     return [];
   }
 
-  return data.results.map(formatGeocodeResult);
+  return data.results
+    .slice()
+    .sort((a, b) => scoreLocationResult(b, name) - scoreLocationResult(a, name))
+    .slice(0, count)
+    .map(formatGeocodeResult);
 }
 
 export async function geocodeCity(name) {
-  const results = await searchLocations(name, 1);
+  const results = await searchLocations(name, 8);
   if (!results.length) {
     throw new Error("Location not found");
   }

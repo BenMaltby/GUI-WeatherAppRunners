@@ -2,6 +2,41 @@ import { useEffect, useRef, useState } from "react";
 import { searchLocations } from "../services/openMeteo";
 import { parseLatLng } from "../services/locationSearch";
 
+function normalizeLocationText(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function scorePresetLocationMatch(locationName, query) {
+  const normalizedName = normalizeLocationText(locationName);
+  const normalizedQuery = normalizeLocationText(query);
+  const queryParts = normalizedQuery.split(",").map((part) => part.trim()).filter(Boolean);
+
+  if (!normalizedQuery) {
+    return -1;
+  }
+
+  let score = 0;
+
+  if (normalizedName === normalizedQuery) score += 200;
+  if (normalizedName.startsWith(normalizedQuery)) score += 120;
+  if (normalizedName.includes(normalizedQuery)) score += 80;
+
+  queryParts.forEach((part, index) => {
+    if (normalizedName.includes(part)) {
+      score += 35;
+    }
+
+    if (index === 0 && normalizedName.startsWith(part)) {
+      score += 50;
+    }
+  });
+
+  return score;
+}
+
 export default function LocationAutocompleteInput({
   label,
   query,
@@ -69,7 +104,13 @@ export default function LocationAutocompleteInput({
         setSuggestionsLoading(true);
 
         const localMatches = presetLocations
-          .filter((location) => location.name.toLowerCase().startsWith(trimmed.toLowerCase()))
+          .map((location) => ({
+            location,
+            score: scorePresetLocationMatch(location.name, trimmed),
+          }))
+          .filter(({ score }) => score > 0)
+          .sort((a, b) => b.score - a.score)
+          .map(({ location }) => location)
           .slice(0, 4);
 
         const liveMatches = await searchLocations(trimmed, 8);
