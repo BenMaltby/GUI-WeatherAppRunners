@@ -268,6 +268,18 @@
   border: 1px solid #f0dfab;
 }
 
+.runner-advice-badge.tone-cold {
+  background: #edf6ff;
+  color: #1d4f91;
+  border: 1px solid #cfe1f7;
+}
+
+.runner-advice-badge.tone-hot {
+  background: #fff1e7;
+  color: #a24b11;
+  border: 1px solid #f2d1ba;
+}
+
 .runner-advice-badge.tone-caution {
   background: #fff0f0;
   color: #b23737;

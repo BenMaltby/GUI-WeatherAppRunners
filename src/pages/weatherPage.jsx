@@ -350,6 +350,7 @@ function buildRunnerAdvice(bandSummaries, runningScores) {
 
   const minTemp = Math.min(...validBands.map((band) => band.avgTemp ?? Infinity));
   const maxTemp = Math.max(...validBands.map((band) => band.avgTemp ?? -Infinity));
+  const averageTemp = average(validBands.map((band) => band.avgTemp)) ?? 15;
   const highestHumidity = Math.max(...validBands.map((band) => band.avgHumidity ?? 0));
   const highestWind = Math.max(...validBands.map((band) => band.avgWind ?? 0));
   const worstSeverity = Math.max(...validBands.map((band) => band.conditionSeverity ?? 0));
@@ -424,6 +425,14 @@ function buildRunnerAdvice(bandSummaries, runningScores) {
     badge = "Mixed";
     tone = "mixed";
     summary = `${formatTemperatureRange(minTemp, maxTemp)} overall. Conditions are mixed.`;
+  } else if (averageTemp < 12) {
+    badge = "Cold Day";
+    tone = "cold";
+    summary = `${formatTemperatureRange(minTemp, maxTemp)} overall. A colder day for running.`;
+  } else if (averageTemp > 18) {
+    badge = "Hot Day";
+    tone = "hot";
+    summary = `${formatTemperatureRange(minTemp, maxTemp)} overall. A warm day for running.`;
   }
 
   return {
