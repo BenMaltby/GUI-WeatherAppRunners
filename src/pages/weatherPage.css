@@ -572,6 +572,13 @@
     padding: 0 16px 32px;
   }
 
+  .finder-panel,
+  .results-panel {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
   .weather-card-header {
     flex-direction: column;
     justify-content: center;

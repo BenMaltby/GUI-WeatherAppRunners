@@ -583,26 +583,6 @@
 }
 .route-condition { font-size: 14px; color: #666; margin: 0; }
 
-.route-stats {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 7px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #e8e8e8;
-  margin-bottom: 10px;
-  width: 100%;
-}
-.route-stat {
-  display: flex;
-  gap: 8px;
-  font-size: 13px;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-.stat-label { color: #555; }
-
 .route-card-extra {
   display: flex;
   justify-content: center;
@@ -642,6 +622,13 @@
     padding: 0 16px 32px;
   }
 
+  .route-builder-panel,
+  .route-results-panel {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
   .route-card-header {
     flex-direction: column;
     align-items: center;
@@ -656,6 +643,8 @@
     flex-direction: row;
     flex: none;
     width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     height: auto;
     padding: 20px;
   }

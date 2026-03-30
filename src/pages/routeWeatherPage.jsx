@@ -272,14 +272,11 @@ function WeatherCard({ point, index, total, weather, loading, error }) {
         </div>
       </div>
 
-      <div className="route-stats">
-        <div className="route-stat"><span className="stat-label">💧 Humidity:</span><strong>{weather.humidity}</strong></div>
-        <div className="route-stat"><span className="stat-label">💨 Wind Speed:</span><strong>{weather.wind}</strong></div>
-        <div className="route-stat"><span className="stat-label">Ground:</span><strong>{weather.ground}</strong></div>
-      </div>
-
       {expanded && (
         <div className="route-card-extra">
+          <div className="extra-item"><span className="extra-label">Humidity</span><strong>{weather.humidity}</strong></div>
+          <div className="extra-item"><span className="extra-label">Wind Speed</span><strong>{weather.wind}</strong></div>
+          <div className="extra-item"><span className="extra-label">Ground</span><strong>{weather.ground}</strong></div>
           <div className="extra-item"><span className="extra-label">Pollen</span><strong>{weather.pollen}</strong></div>
           <div className="extra-item"><span className="extra-label">Air Quality</span><strong>{weather.airQuality}</strong></div>
           <div className="extra-item"><span className="extra-label">Icyness</span><strong>{weather.icyness}</strong></div>
