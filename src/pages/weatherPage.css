@@ -215,9 +215,10 @@
   margin-top: 18px;
   padding: 20px;
   border-radius: 16px;
-  background: linear-gradient(160deg, #10261b 0%, #1f5139 100%);
-  color: #f6fff7;
-  box-shadow: 0 14px 28px rgba(16, 38, 27, 0.18);
+  background: #ffffff;
+  color: #1a1a1a;
+  border: 1px solid #e6e6e6;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .runner-advice-header {
@@ -233,13 +234,14 @@
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(246, 255, 247, 0.72);
+  color: #666;
 }
 
 .runner-advice-card h3 {
   margin: 0;
   font-size: 22px;
   line-height: 1.15;
+  color: #1a1a1a;
 }
 
 .runner-advice-badge {
@@ -251,25 +253,28 @@
 }
 
 .runner-advice-badge.tone-good {
-  background: #d9f99d;
-  color: #365314;
+  background: #eef8ef;
+  color: #247a31;
+  border: 1px solid #cae8ce;
 }
 
 .runner-advice-badge.tone-mixed {
-  background: #fef08a;
-  color: #854d0e;
+  background: #fff7df;
+  color: #8a6200;
+  border: 1px solid #f0dfab;
 }
 
 .runner-advice-badge.tone-caution {
-  background: #fecaca;
-  color: #991b1b;
+  background: #fff0f0;
+  color: #b23737;
+  border: 1px solid #efc7c7;
 }
 
 .runner-advice-summary {
   margin: 0 0 16px;
   font-size: 14px;
   line-height: 1.5;
-  color: rgba(246, 255, 247, 0.9);
+  color: #444;
 }
 
 .runner-advice-grid {
@@ -280,20 +285,20 @@
 .runner-advice-section {
   padding: 14px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #f7f8fa;
+  border: 1px solid #ececec;
 }
 
 .runner-advice-section p {
   margin: 0;
   font-size: 13px;
   line-height: 1.5;
-  color: rgba(246, 255, 247, 0.92);
+  color: #333;
 }
 
 .runner-advice-highlight {
-  background: rgba(194, 255, 214, 0.14);
-  border-color: rgba(194, 255, 214, 0.24);
+  background: #f2faf3;
+  border-color: #d7ebda;
 }
 
 .runner-advice-label {
@@ -303,7 +308,7 @@
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #b8f7c6;
+  color: #2b6a34;
 }
 
 /* ── Right Results Panel ── */
