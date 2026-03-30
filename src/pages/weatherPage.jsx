@@ -72,14 +72,20 @@ function WeatherCard({ band, weather }) {
         </div>
       </div>
 
-      <div className="weather-card-stats">
-        <span>💧 {weather.humidity}</span>
-        <span>💨 {weather.wind}</span>
-        <span>Ground: <strong>{weather.ground}</strong></span>
-      </div>
-
       {expanded && (
         <div className="weather-card-extra">
+          <div className="extra-item">
+            <span className="extra-label">Humidity</span>
+            <strong>{weather.humidity}</strong>
+          </div>
+          <div className="extra-item">
+            <span className="extra-label">Wind Speed</span>
+            <strong>{weather.wind}</strong>
+          </div>
+          <div className="extra-item">
+            <span className="extra-label">Ground</span>
+            <strong>{weather.ground}</strong>
+          </div>
           <div className="extra-item">
             <span className="extra-label">Pollen</span>
             <strong>{weather.pollen}</strong>

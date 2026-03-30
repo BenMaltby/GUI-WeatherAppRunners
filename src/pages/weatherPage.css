@@ -501,21 +501,6 @@
   margin: 0;
 }
 
-/* Stats row */
-.weather-card-stats {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  font-size: 13px;
-  color: #555;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #e8e8e8;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-  width: 100%;
-  text-align: center;
-}
-
 /* Expanded extra row */
 .weather-card-extra {
   display: flex;
