@@ -1,6 +1,6 @@
 # Weather App Runners
 
-This project is a React + Vite weather application for runners. It allows a user to:
+This project is a weather application for runners. It allows a user to:
 
 - search for a location and view weather conditions for different running time bands
 - build a route with multiple stops and inspect the weather along that route

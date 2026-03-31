@@ -3,7 +3,10 @@
 /* Main page background and base font styling for the single-location view. */
 .weather-page {
   min-height: 100vh;
-  background-color: #b8ddb8;
+  background:
+    linear-gradient(rgba(17, 35, 20, 0.14), rgba(17, 35, 20, 0.28)),
+    url("../assets/MountainTrailDawnWide.jpg") center center / cover no-repeat;
+  background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
