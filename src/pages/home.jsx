@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 
 export default function Home() {
+  // Stores the forecast data and the basic loading/error state for the page.
   const [data, setData] = useState(null);
   const [status, setStatus] = useState("loading"); // loading | ok | error
   const [error, setError] = useState("");
 
+  // Loads the forecast once when the page first opens.
   useEffect(() => {
     fetch("/api/forecast")
       .then((r) => r.json())
@@ -23,6 +25,8 @@ export default function Home() {
       });
   }, []);
 
+  // Converts the raw API response into simpler row objects so the JSX below
+  // is easier to read and render.
   const rows = useMemo(() => {
     if (!data?.list) return [];
     return data.list.map((item) => {
@@ -42,6 +46,7 @@ export default function Home() {
     });
   }, [data]);
 
+  // Uses the first forecast entry as a simple summary card at the top.
   const header = rows[0];
 
   return (
@@ -119,10 +124,12 @@ export default function Home() {
 
 /* -------- helpers -------- */
 
+// Rounds values for display and gives a fallback if the value is missing.
 function round(n) {
   return typeof n === "number" ? Math.round(n) : "—";
 }
 
+// Makes weather descriptions look a bit nicer in the UI.
 function titleCase(s) {
   if (!s) return "";
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -132,12 +139,12 @@ function titleCase(s) {
 // Simple local display (for coursework this is fine; later we can do proper timezone handling)
 function formatLocalTime(dtTxt) {
   if (!dtTxt) return "—";
-  // Convert "YYYY-MM-DD HH:mm:ss" -> "YYYY-MM-DDTHH:mm:ss"
+  // Convert the API format into something Date can parse more easily.
   const iso = dtTxt.replace(" ", "T") + "Z"; // treat as UTC; city.timezone is 0 for London here
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return dtTxt;
 
-  // Shows e.g. "Fri 00:00"
+  // Displays a shorter label like "Fri 00:00" for the forecast list.
   return d.toLocaleString(undefined, {
     weekday: "short",
     hour: "2-digit",
@@ -147,6 +154,8 @@ function formatLocalTime(dtTxt) {
 
 /* -------- styles -------- */
 
+// Keeping styles in one object here made it quicker to prototype the page
+// without creating a separate CSS file.
 const styles = {
   page: {
     maxWidth: 900,

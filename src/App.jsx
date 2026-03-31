@@ -4,6 +4,8 @@ import WeatherPage from "./pages/weatherPage";
 import RouteWeatherPage from "./pages/routeWeatherPage";
 
 export default function App() {
+  // Simple page switching between the single-location weather view
+  // and the route weather view.
   const [page, setPage] = useState("weather"); // "weather" | "route"
 
   return (

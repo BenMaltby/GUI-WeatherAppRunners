@@ -14,9 +14,8 @@ import LocationAutocompleteInput from "../components/LocationAutocompleteInput";
 import { loadPresetLocations, parseLatLng } from "../services/locationSearch";
 import "./weatherPage.css";
 
-
-// Keela's comment
-// ── Run time bands ────────────────────────────────────────────────────────────
+// Splits the day into broad running windows so the page can compare which
+// part of the day looks best for a run.
 const RUN_BANDS = [
   { id: 1, label: "Morning Run",   timeLabel: "6:00 AM – 12:00 PM", icon: "🌤️", iconType: "morning"   },
   { id: 2, label: "Afternoon Run", timeLabel: "12:00 PM – 6:00 PM", icon: "☀️", iconType: "sunny"     },
@@ -24,7 +23,7 @@ const RUN_BANDS = [
   { id: 4, label: "Night Run",     timeLabel: "12:00 AM – 6:00 AM", icon: "🌙", iconType: "night"     },
 ];
 
-// ── WeatherCard ───────────────────────────────────────────────────────────────
+// Displays one time band card and lets the user expand it to see extra details.
 function WeatherCard({ band, weather }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -108,6 +107,8 @@ function WeatherCard({ band, weather }) {
   );
 }
 
+// Shows a short summary card that turns the weather data into more practical
+// advice for a runner.
 function RunnerAdviceCard({ advice, loading, locationName }) {
   if (loading) {
     return (
@@ -165,16 +166,20 @@ function RunnerAdviceCard({ advice, loading, locationName }) {
   );
 }
 
+// Small helper used a lot in the scoring calculations.
 function average(nums) {
   const valid = nums.filter((n) => typeof n === "number");
   if (!valid.length) return null;
   return valid.reduce((a, b) => a + b, 0) / valid.length;
 }
 
+// Keeps score values inside a fixed range.
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
 }
 
+// Normalises a value compared with the rest of the values in the same day.
+// I use this so each run band can be compared relative to the others.
 function normalizeRelative(value, values, { invert = false, neutral = 0.75 } = {}) {
   const valid = values.filter((n) => typeof n === "number" && !Number.isNaN(n));
   if (typeof value !== "number" || Number.isNaN(value)) return 0.5;
@@ -188,11 +193,13 @@ function normalizeRelative(value, values, { invert = false, neutral = 0.75 } = {
   return invert ? 1 - normalized : normalized;
 }
 
+// Rewards values that are close to an ideal target.
 function closenessScore(value, target, tolerance) {
   if (typeof value !== "number" || Number.isNaN(value)) return 0.5;
   return clamp(1 - Math.abs(value - target) / tolerance, 0, 1);
 }
 
+// Used to find the most common weather code in a time band.
 function mostCommon(arr) {
   const counts = {};
   for (const value of arr) {
@@ -203,6 +210,8 @@ function mostCommon(arr) {
   );
 }
 
+// Converts weather codes into a rough severity value so they can be used
+// inside the running score.
 function weatherSeverity(code) {
   if (code === 0 || code === 1) return 0.05;
   if (code === 2) return 0.07;
@@ -215,6 +224,7 @@ function weatherSeverity(code) {
   return 0.45;
 }
 
+// Adds a penalty for ground conditions that are worse for running.
 function groundPenalty(label) {
   if (label === "Dry") return 0;
   if (label === "Damp") return 0.35;
@@ -222,6 +232,7 @@ function groundPenalty(label) {
   return 0.45;
 }
 
+// Gives colder temperatures a stronger penalty because of ice risk.
 function icyPenalty(tempC) {
   if (typeof tempC !== "number" || Number.isNaN(tempC)) return 0.2;
   if (tempC <= 0) return 0.95;
@@ -230,6 +241,7 @@ function icyPenalty(tempC) {
   return 0;
 }
 
+// Turns pollen and AQI into penalty values so they can be mixed into the score.
 function pollenPenalty(value) {
   if (value == null) return 0.2;
   if (value < 1) return 0.05;
@@ -244,6 +256,8 @@ function aqiPenalty(aqi) {
   return clamp(aqi / 120, 0, 1);
 }
 
+// Combines the different weather factors into a final running score for each
+// time band, then rescales the results to a 0-100 style score.
 function buildRunningScores(bandSummaries) {
   const validBands = bandSummaries.filter((band) => band.hasData);
   if (!validBands.length) {
@@ -330,6 +344,7 @@ function buildRunningScores(bandSummaries) {
   );
 }
 
+// Formats a quick min-max temperature summary for the advice card.
 function formatTemperatureRange(minTemp, maxTemp) {
   if (minTemp == null || maxTemp == null) {
     return "mixed temperatures";
@@ -342,6 +357,8 @@ function formatTemperatureRange(minTemp, maxTemp) {
   return `${Math.round(minTemp)}-${Math.round(maxTemp)}°C`;
 }
 
+// Turns the analysed band data into a more human summary with clothing,
+// hydration and timing advice.
 function buildRunnerAdvice(bandSummaries, runningScores) {
   const validBands = bandSummaries.filter((band) => band.hasData);
   if (!validBands.length) {
@@ -445,6 +462,7 @@ function buildRunnerAdvice(bandSummaries, runningScores) {
   };
 }
 
+// Checks which hours belong to each run band.
 function inBand(hour, bandId) {
   if (bandId === 1) return hour >= 6 && hour < 12;
   if (bandId === 2) return hour >= 12 && hour < 18;
@@ -452,6 +470,8 @@ function inBand(hour, bandId) {
   return hour >= 0 && hour < 6;
 }
 
+// Groups hourly weather into the run bands, calculates averages, and prepares
+// the card data that the page will render.
 function buildBandWeather(forecast, airData) {
   const hourly = forecast.hourly;
   const currentAqi = airData?.current?.european_aqi ?? null;
@@ -563,8 +583,10 @@ function buildBandWeather(forecast, airData) {
 }
 
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
+// Main weather finder page for a single location.
 export default function WeatherPage({ onNavigateToRoute }) {
+  // These states store the chosen location, loading/errors, and the weather
+  // results that get shown on the right-hand panel.
   const [weatherBands, setWeatherBands] = useState({});
   const [runnerAdvice, setRunnerAdvice] = useState(null);
   const [weatherLoading, setWeatherLoading] = useState(false);
@@ -580,11 +602,13 @@ export default function WeatherPage({ onNavigateToRoute }) {
   const hasExpandedResults =
     Boolean(searchedLocation) && !weatherLoading && !weatherError;
 
-  // Load CSV on mount
+  // Loads the preset CSV locations once so the autocomplete has local results.
   useEffect(() => {
     loadPresetLocations().then(setLocations);
   }, []);
 
+  // Keeps the results panel height aligned with the finder panel once results
+  // are visible, so the two columns feel more balanced.
   useEffect(() => {
     if (!hasExpandedResults) {
       setPilotPanelHeight(null);
@@ -613,6 +637,8 @@ export default function WeatherPage({ onNavigateToRoute }) {
     };
   }, [hasExpandedResults, runnerAdvice, weatherLoading]);
 
+  // Resolves the input into coordinates, then fetches weather and air quality
+  // data for that location.
   const handleSearch = async () => {
     setLocationError("");
     setWeatherError("");
@@ -676,6 +702,7 @@ export default function WeatherPage({ onNavigateToRoute }) {
     }
   };
 
+  // Uses browser geolocation and then matches it to the nearest preset city.
   const handleGetCurrentLocation = () => {
     if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by your browser.");

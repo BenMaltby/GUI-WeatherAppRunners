@@ -1,3 +1,5 @@
+/* These are the default global styles from the Vite setup, mainly used so
+   the app has a sensible base before page-specific styles take over. */
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -13,6 +15,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Basic link styling used across the app unless a component overrides it. */
 a {
   font-weight: 500;
   color: #646cff;
@@ -22,6 +25,8 @@ a:hover {
   color: #535bf2;
 }
 
+/* Removes the default margin and keeps the app stretched to the full height
+   of the screen. */
 body {
   margin: 0;
   display: flex;
@@ -35,6 +40,7 @@ h1 {
   line-height: 1.1;
 }
 
+/* Default button styling from the starter project. */
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -54,6 +60,8 @@ button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
 }
 
+/* Light mode overrides so the starter theme still looks readable if the
+   user prefers a light colour scheme. */
 @media (prefers-color-scheme: light) {
   :root {
     color: #213547;

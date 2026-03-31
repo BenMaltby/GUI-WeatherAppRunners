@@ -1,11 +1,13 @@
 /* WeatherPage.css */
 
+/* Main page background and base font styling for the single-location view. */
 .weather-page {
   min-height: 100vh;
   background-color: #b8ddb8;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Simple nav button used to switch to the route page. */
 .top-nav {
   display: flex;
   justify-content: center;
@@ -40,7 +42,7 @@
   align-items: flex-start;
 }
 
-/* ── Left Finder Panel ── */
+/* Left panel for the search input and runner advice card. */
 .finder-panel {
   background: white;
   border-radius: 16px;
@@ -76,7 +78,8 @@
   gap: 8px;
 }
 
-/* Autocomplete container — position relative for dropdown */
+/* Position relative is needed so the autocomplete dropdown can sit directly
+   underneath the input. */
 .autocomplete-container {
   position: relative;
   flex: 1;
@@ -105,7 +108,7 @@
   background: #fff5f5;
 }
 
-/* Suggestions dropdown */
+/* Dropdown for autocomplete matches. */
 .suggestions-dropdown {
   position: absolute;
   top: calc(100% + 4px);
@@ -154,7 +157,7 @@
   font-family: monospace;
 }
 
-/* Error & coords feedback */
+/* Small helper text below the input for errors and resolved coordinates. */
 .location-error {
   font-size: 13px;
   color: #e53935;
@@ -168,7 +171,7 @@
   font-family: monospace;
 }
 
-/* Geo button */
+/* Button for using the browser's current location. */
 .geo-btn {
   width: 100%;
   padding: 11px 14px;
@@ -192,7 +195,7 @@
   cursor: not-allowed;
 }
 
-/* Get Weather button */
+/* Main action button for fetching the forecast. */
 .get-weather-btn {
   width: 100%;
   padding: 14px;
@@ -215,6 +218,7 @@
   cursor: wait;
 }
 
+/* Card that gives a more practical summary for runners. */
 .runner-advice-card {
   margin-top: 18px;
   padding: 20px;
@@ -327,7 +331,7 @@
   color: #2b6a34;
 }
 
-/* ── Right Results Panel ── */
+/* Right-hand panel for showing the weather cards. */
 .results-panel {
   background: white;
   border-radius: 16px;
@@ -394,7 +398,7 @@
   margin: 8px 0 0;
 }
 
-/* ── Weather Card ── */
+/* Individual card for each running time band. */
 .weather-card {
   background: #f7f8fa;
   border-radius: 12px;
@@ -404,7 +408,7 @@
   align-items: center;
 }
 
-/* Header row: band icon + label + time */
+/* Top row with the time band label and running score. */
 .weather-card-header {
   margin-bottom: 12px;
   width: 100%;
@@ -468,7 +472,7 @@
   color: #0f172a;
 }
 
-/* Main weather row */
+/* Main temperature and condition display. */
 .weather-card-main {
   display: flex;
   align-items: center;
@@ -513,7 +517,7 @@
   margin: 0;
 }
 
-/* Expanded extra row */
+/* Hidden extra details that appear when the card is expanded. */
 .weather-card-extra {
   display: flex;
   justify-content: center;
@@ -565,7 +569,7 @@
   opacity: 0.7;
 }
 
-/* ── Mobile ── */
+/* Stacks the two columns on smaller screens. */
 @media (max-width: 768px) {
   .weather-layout {
     flex-direction: column;

@@ -1,3 +1,5 @@
+/* These are mostly the default Vite starter styles.
+   Most of the actual app styling now lives in the page CSS files instead. */
 #root {
   max-width: 1280px;
   margin: 0 auto;
@@ -5,6 +7,7 @@
   text-align: center;
 }
 
+/* Left from the starter template. */
 .logo {
   height: 6em;
   padding: 1.5em;
@@ -33,6 +36,7 @@
   }
 }
 
+/* Starter utility classes kept here in case they are reused later. */
 .card {
   padding: 2em;
 }

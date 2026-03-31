@@ -1,12 +1,13 @@
 /* RouteWeatherPage.css */
 
+/* Main page background and base font styling for the route weather view. */
 .route-page {
   min-height: 100vh;
   background-color: #b8ddb8;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-/* ── Nav ── */
+/* Navigation button back to the normal weather finder. */
 .route-top-nav {
   display: flex;
   justify-content: center;
@@ -25,7 +26,7 @@
 }
 .route-nav-btn:hover { background: #f0f0f0; }
 
-/* ── Outer 3-column layout ── */
+/* Three-column layout: route builder, slider, and weather results. */
 .route-outer-layout {
   display: flex;
   gap: 20px;
@@ -35,7 +36,7 @@
   align-items: flex-start;
 }
 
-/* ── LEFT: Route Builder ── */
+/* Left panel where the user builds their route. */
 .route-builder-panel {
   background: white;
   border-radius: 16px;
@@ -52,7 +53,7 @@
   color: #1a1a1a;
 }
 
-/* Stops list */
+/* Vertical list of route stops. */
 .stops-list {
   display: flex;
   flex-direction: column;
@@ -68,7 +69,7 @@
   padding-bottom: 8px;
 }
 
-/* Vertical connector line between stops */
+/* Draws the line linking the stop markers together visually. */
 .stop-row:not(:last-child)::after {
   content: "";
   position: absolute;
@@ -173,7 +174,7 @@
   margin: 2px 0 0;
 }
 
-/* Geo icon button */
+/* Small location button for filling the start point automatically. */
 .geo-icon-btn {
   background: white;
   border: 1.5px solid #2db540;
@@ -186,7 +187,7 @@
 }
 .geo-icon-btn:hover { background: #f0faf1; }
 
-/* Suggestions dropdown */
+/* Autocomplete dropdown reused inside the route builder. */
 .suggestions-dropdown {
   position: absolute;
   top: calc(100% + 4px);
@@ -220,7 +221,7 @@
 .suggestion-name { font-size: 13px; color: #1a1a1a; font-weight: 500; }
 .suggestion-coords { font-size: 11px; color: #aaa; font-family: monospace; }
 
-/* Add stop & search buttons */
+/* Buttons for adding extra stops and starting the route search. */
 .add-stop-btn {
   width: 100%;
   padding: 10px;
@@ -283,7 +284,7 @@
   text-align: center;
 }
 
-/* ── MIDDLE: Slider Panel ── */
+/* Middle column containing the vertical route slider. */
 .route-slider-panel {
   background: white;
   border-radius: 16px;
@@ -349,7 +350,7 @@
   white-space: nowrap;
 }
 
-/* Slider track */
+/* Main track for selecting which point on the route to inspect. */
 .slider-track {
   position: relative;
   width: 36px;
@@ -384,7 +385,7 @@
   z-index: 1;
 }
 
-/* Snap markers */
+/* Small markers for each waypoint or key stop. */
 .snap-marker {
   position: absolute;
   left: 50%;
@@ -407,7 +408,7 @@
   box-shadow: 0 0 0 3px rgba(45,181,64,0.2);
 }
 
-/* Key stop markers — red ring */
+/* Key stops stand out from normal waypoints using a red marker style. */
 .snap-marker.key-stop {
   width: 10px;
   height: 10px;
@@ -427,7 +428,7 @@
   box-shadow: 0 0 0 3px rgba(229,57,53,0.25);
 }
 
-/* Handle */
+/* Drag handle shown on the current slider position. */
 .slider-handle {
   position: absolute;
   left: 50%;
@@ -446,7 +447,7 @@
   border-color: #1a1a1a;
 }
 
-/* Legend */
+/* Explains the slider marker styles. */
 .slider-legend {
   display: flex;
   flex-direction: column;
@@ -470,7 +471,7 @@
 .key-dot { background: white; border: 2px solid #e53935; }
 .way-dot { background: #ccc; border: 1.5px solid #bbb; }
 
-/* ── RIGHT: Results Panel ── */
+/* Right panel showing weather for the selected route point. */
 .route-results-panel {
   background: white;
   border-radius: 16px;
@@ -499,7 +500,7 @@
 .empty-cloud { font-size: 56px; opacity: 0.4; margin-bottom: 12px; display: block; }
 .route-empty-state p { font-size: 14px; margin: 0; text-align: center; }
 
-/* Weather card in results */
+/* Card used to display the active point's weather details. */
 .route-weather-card {
   background: #f7f8fa;
   border-radius: 12px;
@@ -633,7 +634,7 @@
 }
 .route-more-btn:hover { opacity: 0.7; }
 
-/* ── Mobile ── */
+/* Switches the layout into a single column on smaller screens. */
 @media (max-width: 900px) {
   .route-outer-layout {
     flex-direction: column;

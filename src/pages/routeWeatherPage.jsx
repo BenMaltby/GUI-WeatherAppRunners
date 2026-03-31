@@ -19,12 +19,13 @@ import {
 } from "../services/runningScore";
 import "./routeWeatherPage.css";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
+// Formats a Date into the HH:MM format expected by the time input.
 function formatTimeInputValue(date) {
   return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
+// Builds the next departure Date from the chosen time input.
+// If the selected time has already passed today, it moves it to tomorrow.
 function buildNextDepartureDateTime(timeValue) {
   const [hoursText = "0", minutesText = "0"] = String(timeValue ?? "").split(":");
   const hours = Number.parseInt(hoursText, 10);
@@ -45,6 +46,7 @@ function buildNextDepartureDateTime(timeValue) {
   return departure;
 }
 
+// Finds the hourly forecast entry closest to the user's departure time.
 function getClosestHourlyIndex(hourlyTimes, targetDate) {
   if (!hourlyTimes?.length) {
     return -1;
@@ -66,6 +68,7 @@ function getClosestHourlyIndex(hourlyTimes, targetDate) {
   return nearestIndex;
 }
 
+// Used for showing readable forecast/departure labels in the route card.
 function formatForecastMoment(value) {
   const date = value instanceof Date ? value : new Date(value);
 
@@ -93,7 +96,7 @@ function haversineKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-// Interpolate lat/lng along a segment by fraction t
+// Works out a point part-way along a route segment.
 function interpolate(lat1, lng1, lat2, lng2, t) {
   return { lat: lat1 + (lat2 - lat1) * t, lng: lng1 + (lng2 - lng1) * t };
 }
@@ -107,6 +110,9 @@ function interpolate(lat1, lng1, lat2, lng2, t) {
 const MAX_WAYPOINTS_PER_SEG = 4;
 const MIN_WAYPOINT_SPACING_KM = 2;
 
+// Builds the list of points used by the route slider, including extra
+// waypoints between the main stops so the user can inspect weather along
+// the route instead of only at the start and end.
 function buildSliderPoints(keyStops) {
   if (keyStops.length < 2) return [];
   const points = [];
@@ -169,6 +175,8 @@ function totalRouteKm(keyStops) {
   return d;
 }
 
+// Creates a set of hourly running profiles which are then used as a reference
+// when calculating the score for the selected route point.
 function buildRouteReferenceProfiles(forecast, airData) {
   const hourly = forecast?.hourly;
   if (!hourly?.time?.length) {
@@ -188,12 +196,13 @@ function buildRouteReferenceProfiles(forecast, airData) {
   );
 }
 
-// ── VerticalSlider ─ ───────────────────────────────────────────────────────────
+// Custom vertical slider for moving through route points and waypoints.
 function VerticalSlider({ points, activeIndex, onChange }) {
   const trackRef = useRef(null);
   const isDragging = useRef(false);
   const [dragPercent, setDragPercent] = useState(null);
 
+  // Converts the selected point index into a percentage position on the slider.
   const percentForIndex = useCallback(
     (i) => (points.length < 2 ? 0 : i / (points.length - 1)),
     [points.length]
@@ -201,6 +210,7 @@ function VerticalSlider({ points, activeIndex, onChange }) {
   const snappedPercent = percentForIndex(activeIndex);
   const displayPercent = dragPercent !== null ? dragPercent : snappedPercent;
 
+  // Finds the nearest real point to wherever the user dragged the handle.
   const getNearestIndex = useCallback((pct) => {
     let nearest = 0, minDist = Infinity;
     points.forEach((_, i) => {
@@ -210,11 +220,13 @@ function VerticalSlider({ points, activeIndex, onChange }) {
     return nearest;
   }, [percentForIndex, points]);
 
+  // Converts pointer position into a 0-1 slider percentage.
   const pctFromEvent = useCallback((clientY) => {
     const rect = trackRef.current.getBoundingClientRect();
     return Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
   }, []);
 
+  // Pointer handlers let the slider work smoothly on mouse and touch.
   const onPointerDown = useCallback((e) => {
     e.preventDefault();
     isDragging.current = true;
@@ -270,7 +282,7 @@ function VerticalSlider({ points, activeIndex, onChange }) {
   );
 }
 
-// ── WeatherCard ───────────────────────────────────────────────────────────────
+// Shows the weather for the currently selected point on the route.
 function WeatherCard({ point, index, total, weather, loading, error }) {
   const [expanded, setExpanded] = useState(false);
 
@@ -354,10 +366,12 @@ function WeatherCard({ point, index, total, weather, loading, error }) {
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
 const MAX_STOPS = 5; // start + end + 3 middle
 
+// Main page for building a route and checking weather at points along it.
 export default function RouteWeatherPage({ onNavigateToWeather }) {
+  // Stores the route setup, the currently selected point, and the weather
+  // information shown in the results panel.
   const [activeWeather, setActiveWeather] = useState(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [weatherLoading, setWeatherLoading] = useState(false);
@@ -375,14 +389,17 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
   const [searched, setSearched] = useState(false);
   const nextId = useRef(3);
 
+  // Loads the preset CSV locations for all the route autocomplete inputs.
   useEffect(() => { loadPresetLocations().then(setLocations); }, []);
 
+  // Updates just one stop without replacing the whole route manually each time.
   const updateStop = (id, updates) => {
     setKeyStops((prev) =>
       prev.map((stop) => (stop.id === id ? { ...stop, ...updates, error: "" } : stop))
     );
   };
 
+  // Inserts a new middle stop just before the end point.
   const addStop = () => {
     if (keyStops.length >= MAX_STOPS) return;
     const newStop = { id: nextId.current++, query: "", resolved: null, error: "" };
@@ -393,10 +410,13 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
     });
   };
 
+  // Removes a middle stop from the route.
   const removeStop = (id) => {
     setKeyStops(prev => prev.filter(s => s.id !== id));
   };
 
+  // Uses browser geolocation and matches the start point to the nearest
+  // preset location.
   const handleGeoForStart = () => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition((pos) => {
@@ -414,6 +434,8 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
     });
   };
 
+  // Resolves every stop into coordinates and then builds the slider points
+  // for the route.
   const handleSearch = async () => {
     try {
       setRouteLoading(true);
@@ -474,6 +496,8 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
   const canAddStop = keyStops.length < MAX_STOPS;
   const activePoint = sliderPoints[activeIndex] ?? null;
 
+  // Whenever the selected route point or departure time changes, load the
+  // matching forecast for that point.
   useEffect(() => {
     async function loadPointWeather() {
       if (!activePoint) return;

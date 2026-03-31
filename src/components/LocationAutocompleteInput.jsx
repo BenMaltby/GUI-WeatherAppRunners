@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { searchLocations } from "../services/openMeteo";
 import { parseLatLng } from "../services/locationSearch";
 
+// Normalises location text so matching is more reliable even if the user
+// types different capital letters or spacing.
 function normalizeLocationText(value) {
   return String(value ?? "")
     .toLowerCase()
@@ -9,6 +11,8 @@ function normalizeLocationText(value) {
     .trim();
 }
 
+// Scores preset locations so the closest local matches can appear before
+// the live API results when the user types.
 function scorePresetLocationMatch(locationName, query) {
   const normalizedName = normalizeLocationText(locationName);
   const normalizedQuery = normalizeLocationText(query);
@@ -57,6 +61,8 @@ export default function LocationAutocompleteInput({
   resolvedClassName = "",
   geoButtonClassName = "",
 }) {
+  // Keeps track of the text shown in the input, the suggestions list,
+  // and whether the dropdown/loading state should be visible.
   const [inputValue, setInputValue] = useState(query ?? resolvedLocation?.name ?? "");
   const [suggestions, setSuggestions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -64,10 +70,13 @@ export default function LocationAutocompleteInput({
   const inputRef = useRef(null);
   const dropdownRef = useRef(null);
 
+  // If the parent updates the query or resolved location, the input also
+  // needs to stay in sync with that latest value.
   useEffect(() => {
     setInputValue(query ?? resolvedLocation?.name ?? "");
   }, [query, resolvedLocation]);
 
+  // Closes the dropdown if the user clicks anywhere outside the input area.
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (
@@ -84,6 +93,9 @@ export default function LocationAutocompleteInput({
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
 
+  // This effect handles autocomplete searching. It ignores very short input
+  // and coordinate input, waits briefly so it does not search on every
+  // keystroke instantly, then merges preset locations with live API results.
   useEffect(() => {
     const trimmed = inputValue.trim();
 
@@ -151,6 +163,8 @@ export default function LocationAutocompleteInput({
     };
   }, [inputValue, presetLocations, resolvedLocation]);
 
+  // Updates the input value as the user types and also supports manual
+  // latitude/longitude input by resolving it immediately.
   const handleChange = (event) => {
     const value = event.target.value;
     const trimmed = value.trim();
@@ -167,6 +181,8 @@ export default function LocationAutocompleteInput({
     }
   };
 
+  // When a suggestion is chosen, store it as the resolved location and
+  // close the dropdown.
   const handleSelect = (location) => {
     setInputValue(location.name);
     onQueryChange(location.name);
@@ -175,6 +191,7 @@ export default function LocationAutocompleteInput({
     setShowDropdown(false);
   };
 
+  // Handles a couple of keyboard shortcuts for better usability.
   const handleKeyDown = (event) => {
     if (event.key === "Escape") {
       setShowDropdown(false);
