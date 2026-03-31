@@ -1,10 +1,8 @@
-/* These are mostly the default Vite starter styles.
-   Most of the actual app styling now lives in the page CSS files instead. */
+/* Let page-level layouts control width and spacing so full-screen pages
+   like the weather view can stretch edge to edge. */
 #root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  width: 100%;
+  min-height: 100vh;
 }
 
 /* Left from the starter template. */
