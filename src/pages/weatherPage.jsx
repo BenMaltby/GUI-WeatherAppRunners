@@ -763,7 +763,7 @@ export default function WeatherPage({ onNavigateToRoute }) {
       >
         {/* ── Left Panel ── */}
         <div className="finder-panel" ref={finderPanelRef}>
-          <h2>Weather Finder</h2>
+          <h2 className="finder-slogan">Feel the outdoors</h2>
 
           <label className="input-label">Enter Location</label>
 

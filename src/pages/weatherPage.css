@@ -62,6 +62,32 @@
   color: #1a1a1a;
 }
 
+.finder-slogan {
+  position: relative;
+  display: inline-block;
+  margin: 0 0 24px;
+  font-size: clamp(2rem, 2.8vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  color: #14361f;
+  background: linear-gradient(135deg, #14361f 0%, #2f7a45 50%, #76a95b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-wrap: balance;
+}
+
+.finder-slogan::after {
+  content: "";
+  display: block;
+  width: 72px;
+  height: 4px;
+  margin-top: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #2f7a45 0%, rgba(118, 169, 91, 0.15) 100%);
+}
+
 .input-label {
   display: block;
   font-size: 14px;
