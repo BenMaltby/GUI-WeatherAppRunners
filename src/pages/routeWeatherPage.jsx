@@ -664,9 +664,6 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
               value={departureTime}
               onChange={(event) => setDepartureTime(event.target.value)}
             />
-            <p className="route-time-help">
-              Weather along the route will use the closest forecast hour to this departure time.
-            </p>
           </div>
 
           <button
