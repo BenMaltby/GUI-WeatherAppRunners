@@ -589,7 +589,15 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
   }, [activePoint, departureTime]);
 
   return (
-    <div className="route-page">
+    <div className="route-page"
+      style={{
+        backgroundImage: `url("/images/trees.png")`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      
       <nav className="route-top-nav">
         <button className="route-nav-btn" onClick={onNavigateToWeather}>← Weather Finder</button>
       </nav>
