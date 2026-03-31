@@ -252,7 +252,7 @@ export default function LocationAutocompleteInput({
       {error && <p className={errorClassName}>{error}</p>}
       {resolvedLocation && (
         <p className={resolvedClassName}>
-          {resolvedLocation.lat.toFixed(4)}, {resolvedLocation.lng.toFixed(4)}
+          {/* {resolvedLocation.lat.toFixed(4)}, {resolvedLocation.lng.toFixed(4)} */}
         </p>
       )}
     </div>
