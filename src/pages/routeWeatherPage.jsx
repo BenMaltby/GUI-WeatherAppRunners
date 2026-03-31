@@ -591,7 +591,7 @@ export default function RouteWeatherPage({ onNavigateToWeather }) {
   return (
     <div className="route-page"
       style={{
-        backgroundImage: `url("/images/trees.png")`,
+        backgroundImage: `linear-gradient(rgba(162, 162, 162, 0.44), rgba(66, 66, 66, 0.48)), url("/images/trees.png")`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
