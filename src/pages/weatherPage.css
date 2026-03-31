@@ -4,7 +4,7 @@
 .weather-page {
   min-height: 100vh;
   background:
-    linear-gradient(rgba(17, 35, 20, 0.14), rgba(17, 35, 20, 0.28)),
+    linear-gradient(rgba(195, 195, 195, 0.34), rgba(51, 51, 51, 0.48)),
     url("../assets/MountainTrailDawnWide.jpg") center center / cover no-repeat;
   background-attachment: fixed;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
