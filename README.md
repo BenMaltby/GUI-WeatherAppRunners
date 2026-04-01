@@ -61,32 +61,6 @@ After building, you can preview the production version locally:
 npm run preview
 ```
 
-## 5. Optional: Run The Express Server
-
-Most of the current app functionality uses Open-Meteo directly from the frontend, so the main app can be tested without starting the server.
-
-There is also an Express server included in the `server/` folder for older or supporting API routes.
-
-To run it:
-
-```bash
-cd server
-npm install
-npm run dev
-```
-
-This starts the server on:
-
-```text
-http://localhost:3001/
-```
-
-If the server is being used, create a file called `server/.env` and add:
-
-```env
-OPENWEATHER_API_KEY=your_api_key_here
-```
-
 ## Quick Start
 
 If you only want to test the main app quickly:
@@ -114,29 +88,3 @@ If the app does not start:
 2. Run `npm install` again in the project root.
 3. Check that the terminal output from `npm run dev` does not show a port conflict.
 4. If weather data does not load, confirm the machine has internet access.
-
-If the optional server does not start:
-
-1. Make sure `npm install` has also been run inside the `server/` folder.
-2. Check that `server/.env` exists if testing the OpenWeather-backed endpoints.
-
-<!--
-Previous README content preserved for reference:
-
-# React + Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
--->
